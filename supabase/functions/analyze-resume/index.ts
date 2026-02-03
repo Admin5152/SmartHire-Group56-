@@ -7,6 +7,7 @@ const corsHeaders = {
 
 interface AnalyzeRequest {
   fileBase64: string;
+  fileType: string;
   fileName: string;
   techStack: string[];
 }
@@ -23,22 +24,34 @@ serve(async (req) => {
       throw new Error('OCR_API_KEY is not configured');
     }
 
-    const { fileBase64, fileName, techStack }: AnalyzeRequest = await req.json();
+    const { fileBase64, fileType, fileName, techStack }: AnalyzeRequest = await req.json();
 
     if (!fileBase64 || !fileName) {
       throw new Error('Missing file data');
     }
 
+    // Determine the MIME type for the base64 data URL
+    let mimeType = 'application/octet-stream';
+    if (fileType === 'application/pdf') {
+      mimeType = 'application/pdf';
+    } else if (fileType === 'application/msword') {
+      mimeType = 'application/msword';
+    } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else if (fileType.startsWith('image/')) {
+      mimeType = fileType;
+    }
+
     // Determine file type for OCR.space API
-    const fileType = fileName.toLowerCase().endsWith('.pdf') ? 'PDF' : 'AUTO';
+    const ocrFileType = fileName.toLowerCase().endsWith('.pdf') ? 'PDF' : 'AUTO';
     
-    // Call OCR.space API
+    // Call OCR.space API with proper base64 format
     const formData = new FormData();
-    formData.append('base64Image', `data:application/octet-stream;base64,${fileBase64}`);
+    formData.append('base64Image', `data:${mimeType};base64,${fileBase64}`);
     formData.append('apikey', OCR_API_KEY);
     formData.append('language', 'eng');
     formData.append('isOverlayRequired', 'false');
-    formData.append('filetype', fileType);
+    formData.append('filetype', ocrFileType);
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
     formData.append('OCREngine', '2'); // More accurate OCR engine

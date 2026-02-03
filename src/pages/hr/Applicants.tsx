@@ -1,17 +1,31 @@
 import { useState } from "react";
-import { Search, Filter, CheckCircle, XCircle, Eye, ChevronDown, FileText } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, ChevronDown, FileText, Briefcase } from "lucide-react";
 import { useJobs, Application } from "@/contexts/JobsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Applicants = () => {
   const { jobs, applications, updateApplicationStatus } = useJobs();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterJob, setFilterJob] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"my" | "others">("my");
+
+  // Filter jobs by ownership
+  const myJobs = jobs.filter((job) => job.createdBy === user?.id);
+  const otherJobs = jobs.filter((job) => job.createdBy !== user?.id);
+  const myJobIds = myJobs.map((j) => j.id);
+
+  // Filter applications by job ownership
+  const myApplications = applications.filter((app) => myJobIds.includes(app.jobId));
+  const otherApplications = applications.filter((app) => !myJobIds.includes(app.jobId));
 
   // Sort applications by AI score (highest first)
-  const sortedApplications = [...applications].sort((a, b) => b.aiScore - a.aiScore);
+  const sortedApplications = [...(viewMode === "my" ? myApplications : otherApplications)].sort(
+    (a, b) => b.aiScore - a.aiScore
+  );
 
   const filteredApplications = sortedApplications.filter((app) => {
     const matchesSearch =
@@ -21,6 +35,9 @@ const Applicants = () => {
     const matchesStatus = !filterStatus || app.status === filterStatus;
     return matchesSearch && matchesJob && matchesStatus;
   });
+
+  // Get jobs for filter dropdown based on view mode
+  const filterJobOptions = viewMode === "my" ? myJobs : otherJobs;
 
   const handleAccept = (application: Application) => {
     updateApplicationStatus(
@@ -59,6 +76,36 @@ const Applicants = () => {
             </p>
           </div>
 
+          {/* View Mode Toggle */}
+          <div className="glass-card p-2 mb-6 inline-flex animate-fade-in-up">
+            <button
+              onClick={() => {
+                setViewMode("my");
+                setFilterJob("");
+              }}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === "my"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              My Jobs ({myApplications.length})
+            </button>
+            <button
+              onClick={() => {
+                setViewMode("others");
+                setFilterJob("");
+              }}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === "others"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Other Jobs ({otherApplications.length})
+            </button>
+          </div>
+
           {/* Filters */}
           <div className="glass-card p-4 mb-6 animate-fade-in-up">
             <div className="flex flex-col md:flex-row gap-4">
@@ -79,7 +126,7 @@ const Applicants = () => {
                   className="input-field min-w-[180px]"
                 >
                   <option value="">All Positions</option>
-                  {jobs.map((job) => (
+                  {filterJobOptions.map((job) => (
                     <option key={job.id} value={job.id}>
                       {job.title}
                     </option>
@@ -106,6 +153,7 @@ const Applicants = () => {
               {filteredApplications.map((app, index) => {
                 const job = jobs.find((j) => j.id === app.jobId);
                 const isExpanded = expandedId === app.id;
+                const isOwnJob = myJobIds.includes(app.jobId);
 
                 return (
                   <div
@@ -154,7 +202,7 @@ const Applicants = () => {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                          {app.status === "pending" && (
+                          {isOwnJob && app.status === "pending" && (
                             <>
                               <button
                                 onClick={() => handleAccept(app)}
@@ -204,7 +252,7 @@ const Applicants = () => {
                               <FileText className="w-4 h-4" />
                               Resume Text (OCR Extracted)
                             </h4>
-                            <div className="p-4 rounded-xl bg-white/80 text-sm text-muted-foreground whitespace-pre-wrap">
+                            <div className="p-4 rounded-xl bg-white/80 text-sm text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">
                               {app.resumeText}
                             </div>
                           </div>
@@ -229,6 +277,12 @@ const Applicants = () => {
                                 <span className="text-muted-foreground">Department</span>
                                 <span className="font-medium">{job?.department}</span>
                               </div>
+                              {!isOwnJob && (
+                                <div className="flex justify-between p-2 rounded-lg bg-amber-500/10">
+                                  <span className="text-amber-700">Note</span>
+                                  <span className="font-medium text-amber-700">From another HR's job</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -240,13 +294,25 @@ const Applicants = () => {
             </div>
           ) : (
             <div className="glass-card p-12 text-center animate-fade-in-up">
-              <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Applicants Found</h3>
-              <p className="text-muted-foreground">
-                {searchTerm || filterJob || filterStatus
-                  ? "Try adjusting your filters"
-                  : "Applications will appear here as candidates apply"}
-              </p>
+              {viewMode === "others" ? (
+                <>
+                  <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Applications from Other Jobs</h3>
+                  <p className="text-muted-foreground">
+                    Applications for jobs created by other HR users will appear here.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Applicants Found</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm || filterJob || filterStatus
+                      ? "Try adjusting your filters"
+                      : "Applications will appear here as candidates apply"}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
