@@ -60,63 +60,7 @@ export const useJobs = () => {
   return context;
 };
 
-const initialJobs: Job[] = [
-  {
-    id: "1",
-    title: "Senior Frontend Developer",
-    description: "Join our frontend team to build amazing user experiences with React and TypeScript. You'll work on cutting-edge projects and collaborate with talented designers and backend engineers.",
-    techStack: ["React", "TypeScript", "Tailwind CSS", "Next.js", "GraphQL"],
-    requirements: ["5+ years of frontend experience", "Strong TypeScript skills", "Experience with modern React patterns"],
-    department: "Engineering",
-    location: "Remote / San Francisco",
-    type: "Full-time",
-    postedDate: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "Backend Engineer",
-    description: "We're looking for a backend engineer to help scale our infrastructure and build robust APIs. You'll work with distributed systems and modern cloud technologies.",
-    techStack: ["Node.js", "Python", "PostgreSQL", "AWS", "Docker", "Kubernetes"],
-    requirements: ["3+ years of backend experience", "Experience with microservices", "Strong problem-solving skills"],
-    department: "Engineering",
-    location: "New York / Hybrid",
-    type: "Full-time",
-    postedDate: "2024-01-10",
-  },
-  {
-    id: "3",
-    title: "DevOps Intern",
-    description: "Great opportunity for students interested in DevOps and cloud infrastructure. Learn from experienced engineers while contributing to real projects.",
-    techStack: ["Linux", "Docker", "CI/CD", "AWS", "Terraform"],
-    requirements: ["Currently pursuing CS degree", "Basic Linux knowledge", "Eager to learn"],
-    department: "Engineering",
-    location: "San Francisco",
-    type: "Internship",
-    postedDate: "2024-01-20",
-  },
-  {
-    id: "4",
-    title: "Full Stack Developer",
-    description: "Looking for a versatile developer who can work across the entire stack. You'll build features end-to-end and mentor junior developers.",
-    techStack: ["React", "Node.js", "MongoDB", "Redis", "TypeScript"],
-    requirements: ["4+ years of full stack experience", "Strong JavaScript fundamentals", "Experience with NoSQL databases"],
-    department: "Product",
-    location: "Remote",
-    type: "Full-time",
-    postedDate: "2024-01-18",
-  },
-  {
-    id: "5",
-    title: "Machine Learning Engineer",
-    description: "Join our AI team to develop and deploy machine learning models that power our core products. Work on challenging problems at scale.",
-    techStack: ["Python", "TensorFlow", "PyTorch", "AWS SageMaker", "MLOps"],
-    requirements: ["MS/PhD in CS or related field", "Experience with deep learning", "Published research is a plus"],
-    department: "AI/ML",
-    location: "Boston / Remote",
-    type: "Full-time",
-    postedDate: "2024-01-12",
-  },
-];
+const initialJobs: Job[] = [];
 
 export const JobsProvider = ({ children }: { children: ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
