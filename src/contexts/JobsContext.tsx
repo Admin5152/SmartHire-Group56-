@@ -10,6 +10,7 @@ export interface Job {
   location: string;
   type: "Full-time" | "Part-time" | "Internship" | "Contract";
   postedDate: string;
+  createdBy: string; // HR user ID who created the job
 }
 
 export interface Application {
@@ -41,6 +42,8 @@ interface JobsContextType {
   applications: Application[];
   notifications: Notification[];
   addJob: (job: Omit<Job, "id" | "postedDate">) => void;
+  updateJob: (jobId: string, updates: Partial<Omit<Job, "id" | "postedDate" | "createdBy">>) => void;
+  deleteJob: (jobId: string) => void;
   applyForJob: (application: Omit<Application, "id" | "appliedDate" | "status">) => void;
   updateApplicationStatus: (applicationId: string, status: Application["status"], message?: string) => void;
   addNotification: (notification: Omit<Notification, "id" | "createdAt" | "read">) => void;
@@ -48,6 +51,7 @@ interface JobsContextType {
   getJobById: (id: string) => Job | undefined;
   getApplicationsByApplicant: (applicantId: string) => Application[];
   getApplicationsByJob: (jobId: string) => Application[];
+  getJobsByCreator: (creatorId: string) => Job[];
 }
 
 const JobsContext = createContext<JobsContextType | null>(null);
@@ -74,6 +78,20 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
       postedDate: new Date().toISOString().split("T")[0],
     };
     setJobs((prev) => [newJob, ...prev]);
+  };
+
+  const updateJob = (jobId: string, updates: Partial<Omit<Job, "id" | "postedDate" | "createdBy">>) => {
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === jobId ? { ...job, ...updates } : job
+      )
+    );
+  };
+
+  const deleteJob = (jobId: string) => {
+    setJobs((prev) => prev.filter((job) => job.id !== jobId));
+    // Also remove applications for this job
+    setApplications((prev) => prev.filter((app) => app.jobId !== jobId));
   };
 
   const applyForJob = (application: Omit<Application, "id" | "appliedDate" | "status">) => {
@@ -139,6 +157,9 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
   const getApplicationsByJob = (jobId: string) =>
     applications.filter((app) => app.jobId === jobId);
 
+  const getJobsByCreator = (creatorId: string) =>
+    jobs.filter((job) => job.createdBy === creatorId);
+
   return (
     <JobsContext.Provider
       value={{
@@ -146,6 +167,8 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         applications,
         notifications,
         addJob,
+        updateJob,
+        deleteJob,
         applyForJob,
         updateApplicationStatus,
         addNotification,
@@ -153,6 +176,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
         getJobById,
         getApplicationsByApplicant,
         getApplicationsByJob,
+        getJobsByCreator,
       }}
     >
       {children}

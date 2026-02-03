@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useJobs, Job } from "@/contexts/JobsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const CreateJob = () => {
   const navigate = useNavigate();
   const { addJob } = useJobs();
+  const { user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -56,6 +58,7 @@ const CreateJob = () => {
       type,
       techStack,
       requirements: requirements.length > 0 ? requirements : ["No specific requirements listed"],
+      createdBy: user?.id || "",
     });
 
     toast.success("Job created successfully!");

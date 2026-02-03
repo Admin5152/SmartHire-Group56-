@@ -43,6 +43,7 @@ const ApplyJob = () => {
     const { data, error } = await supabase.functions.invoke('analyze-resume', {
       body: {
         fileBase64,
+        fileType: file.type,
         fileName: file.name,
         techStack,
       },
