@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJobs } from "@/contexts/JobsContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ApplyJob = () => {
   const { jobId } = useParams();
@@ -16,28 +17,50 @@ const ApplyJob = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
 
   const job = getJobById(selectedJobId);
   const existingApplications = getApplicationsByApplicant(user?.id || "");
   const hasApplied = existingApplications.some((app) => app.jobId === selectedJobId);
 
-  const simulateAIAnalysis = (resumeText: string, techStack: string[]) => {
-    // Simulate AI analysis - in production, this would be a real API call
-    const matchedSkills: string[] = [];
-    const resumeLower = resumeText.toLowerCase();
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
-    techStack.forEach((tech) => {
-      if (resumeLower.includes(tech.toLowerCase())) {
-        matchedSkills.push(tech);
-      }
+  const analyzeResume = async (file: File, techStack: string[]) => {
+    const fileBase64 = await fileToBase64(file);
+    
+    const { data, error } = await supabase.functions.invoke('analyze-resume', {
+      body: {
+        fileBase64,
+        fileName: file.name,
+        techStack,
+      },
     });
 
-    // Calculate score based on matched skills
-    const baseScore = (matchedSkills.length / techStack.length) * 100;
-    const randomBonus = Math.random() * 15; // Add some variation
-    const score = Math.min(Math.round(baseScore + randomBonus), 100);
+    if (error) {
+      throw new Error(error.message || 'Failed to analyze resume');
+    }
 
-    return { score, matchedSkills };
+    if (!data.success) {
+      throw new Error(data.error || 'Resume analysis failed');
+    }
+
+    return {
+      extractedText: data.extractedText,
+      matchedSkills: data.matchedSkills,
+      score: data.score,
+    };
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +85,7 @@ const ApplyJob = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setOcrError(null);
 
     if (!selectedJobId || !name || !file) {
       toast.error("Please fill in all fields and upload your resume");
@@ -77,19 +101,11 @@ const ApplyJob = () => {
     setIsAnalyzing(true);
 
     try {
-      // Simulate file reading and OCR
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock extracted resume text
-      const mockResumeText = `
-        Experienced software developer with expertise in ${job?.techStack.slice(0, 3).join(", ")}.
-        Strong background in web development and team collaboration.
-        Proficient in JavaScript, TypeScript, React, Node.js, and various other technologies.
-        5 years of experience building scalable applications.
-      `;
-
-      // Simulate AI analysis
-      const { score, matchedSkills } = simulateAIAnalysis(mockResumeText, job?.techStack || []);
+      // Analyze resume using OCR API
+      const { extractedText, matchedSkills, score } = await analyzeResume(
+        file,
+        job?.techStack || []
+      );
 
       setIsAnalyzing(false);
 
@@ -99,7 +115,7 @@ const ApplyJob = () => {
         applicantName: name,
         applicantEmail: user?.email || "",
         resumeFileName: file.name,
-        resumeText: mockResumeText,
+        resumeText: extractedText,
         aiScore: score,
         matchedSkills,
       });
@@ -107,7 +123,10 @@ const ApplyJob = () => {
       toast.success("Application submitted successfully!");
       navigate("/applicant/dashboard");
     } catch (error) {
-      toast.error("Failed to submit application. Please try again.");
+      console.error("Application error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to analyze resume";
+      setOcrError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
       setIsAnalyzing(false);
@@ -247,14 +266,25 @@ const ApplyJob = () => {
                 </div>
               </div>
 
+              {/* OCR Error Display */}
+              {ocrError && (
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-sm text-destructive">Resume Analysis Failed</h4>
+                    <p className="text-xs text-destructive/80">{ocrError}</p>
+                  </div>
+                </div>
+              )}
+
               {/* AI Analysis Info */}
               <div className="p-4 rounded-xl bg-secondary/50 flex items-start gap-3">
                 <FileText className="w-5 h-5 text-primary mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-sm">AI-Powered Analysis</h4>
+                  <h4 className="font-medium text-sm">AI-Powered OCR Analysis</h4>
                   <p className="text-xs text-muted-foreground">
-                    Your resume will be analyzed against the job requirements using our AI system.
-                    This helps match your skills with the position.
+                    Your resume will be scanned using OCR technology to extract text, then analyzed 
+                    against the job requirements to match your skills with the position.
                   </p>
                 </div>
               </div>
