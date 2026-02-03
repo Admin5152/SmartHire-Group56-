@@ -38,35 +38,46 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+      {/* Hero Section with Video Background */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10" />
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/videos/hero-background.mp4" type="video/mp4" />
+        </video>
         
-        {/* Floating shapes */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }} />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/50" />
         
         <div className="relative z-10 container mx-auto px-6 text-center">
-          <div className="animate-fade-in-up">
-            <span className="badge-primary mb-6 inline-block">
-              Now Hiring
-            </span>
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 leading-tight">
-              We're glad you're here.
-              <br />
-              <span className="text-primary">Welcome to Company X.</span>
+          <div className="space-y-4">
+            <h1 
+              className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-[fade-in_1s_ease-out_forwards] opacity-0"
+              style={{ animationDelay: "0.3s" }}
+            >
+              Welcome
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Join a team that builds the future. We're on a mission to transform how the world works with innovative technology solutions.
+            <p 
+              className="text-3xl md:text-4xl lg:text-5xl font-light text-white/90 animate-[fade-in_1s_ease-out_forwards] opacity-0"
+              style={{ animationDelay: "0.8s" }}
+            >
+              Glad you're here
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/jobs" className="btn-primary inline-flex items-center gap-2 text-lg">
+            <div 
+              className="flex flex-col sm:flex-row gap-4 justify-center pt-8 animate-[fade-in_1s_ease-out_forwards] opacity-0"
+              style={{ animationDelay: "1.3s" }}
+            >
+              <Link to="/jobs" className="bg-white text-primary font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 inline-flex items-center gap-2 text-lg">
                 View Available Jobs
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link to="/signin" className="btn-secondary inline-flex items-center gap-2 text-lg">
+              <Link to="/signin" className="bg-white/20 text-white font-semibold px-8 py-4 rounded-xl border border-white/30 backdrop-blur-sm transition-all duration-300 hover:bg-white/30 inline-flex items-center gap-2 text-lg">
                 Sign In to Apply
                 <ChevronRight className="w-5 h-5" />
               </Link>
