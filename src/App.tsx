@@ -58,15 +58,8 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/"
-        element={
-          <LayoutWrapper>
-            <Landing />
-          </LayoutWrapper>
-        }
-      />
+      {/* Public Routes - Landing has no sidebar for full-width hero */}
+      <Route path="/" element={<Landing />} />
       <Route
         path="/jobs"
         element={
@@ -91,22 +84,8 @@ const AppRoutes = () => {
           </LayoutWrapper>
         }
       />
-      <Route
-        path="/signin"
-        element={
-          <LayoutWrapper>
-            <SignIn />
-          </LayoutWrapper>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <LayoutWrapper>
-            <SignUp />
-          </LayoutWrapper>
-        }
-      />
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
 
       {/* Applicant Routes */}
       <Route
