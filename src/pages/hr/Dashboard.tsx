@@ -1,22 +1,79 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Users, Briefcase, FileText, TrendingUp, PlusCircle, ArrowRight } from "lucide-react";
-import { useJobs } from "@/contexts/JobsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+}
+
+interface Application {
+  id: string;
+  job_id: string;
+  applicant_name: string;
+  applicant_email: string;
+  ai_score: number;
+  matched_skills: string[];
+  status: string;
+}
 
 const HRDashboard = () => {
   const { user } = useAuth();
-  const { jobs, applications } = useJobs();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      // Fetch jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("id, title, department")
+        .eq("created_by", user?.id);
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .order("ai_score", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const pendingApplications = applications.filter((a) => a.status === "pending" || a.status === "reviewing");
   const acceptedApplications = applications.filter((a) => a.status === "accepted");
   const averageScore = applications.length > 0
-    ? Math.round(applications.reduce((sum, a) => sum + a.aiScore, 0) / applications.length)
+    ? Math.round(applications.reduce((sum, a) => sum + a.ai_score, 0) / applications.length)
     : 0;
 
   // Get top candidates (highest AI scores)
-  const topCandidates = [...applications]
-    .sort((a, b) => b.aiScore - a.aiScore)
-    .slice(0, 5);
+  const topCandidates = applications.slice(0, 5);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
@@ -38,7 +95,7 @@ const HRDashboard = () => {
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           {[
-            { icon: Briefcase, label: "Open Positions", value: jobs.length, color: "text-primary" },
+            { icon: Briefcase, label: "My Jobs", value: jobs.length, color: "text-primary" },
             { icon: Users, label: "Total Applicants", value: applications.length, color: "text-primary" },
             { icon: FileText, label: "Pending Review", value: pendingApplications.length, color: "text-primary" },
             { icon: TrendingUp, label: "Avg. AI Score", value: `${averageScore}%`, color: "text-success" },
@@ -70,7 +127,7 @@ const HRDashboard = () => {
             {applications.length > 0 ? (
               <div className="space-y-4">
                 {applications.slice(0, 5).map((app, index) => {
-                  const job = jobs.find((j) => j.id === app.jobId);
+                  const job = jobs.find((j) => j.id === app.job_id);
                   return (
                     <div
                       key={app.id}
@@ -82,30 +139,32 @@ const HRDashboard = () => {
                           <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                               <span className="font-semibold text-primary">
-                                {app.applicantName.charAt(0).toUpperCase()}
+                                {app.applicant_name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div>
-                              <h3 className="font-semibold">{app.applicantName}</h3>
-                              <p className="text-sm text-muted-foreground">{app.applicantEmail}</p>
+                              <h3 className="font-semibold">{app.applicant_name}</h3>
+                              <p className="text-sm text-muted-foreground">{app.applicant_email}</p>
                             </div>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            Applied for <span className="font-medium">{job?.title}</span>
+                            Applied for <span className="font-medium">{job?.title || "Unknown Position"}</span>
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            {app.matchedSkills.slice(0, 3).map((skill) => (
-                              <span key={skill} className="px-2 py-0.5 bg-success/10 text-success text-xs rounded-lg">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
+                          {app.matched_skills && app.matched_skills.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {app.matched_skills.slice(0, 3).map((skill) => (
+                                <span key={skill} className="px-2 py-0.5 bg-success/10 text-success text-xs rounded-lg">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className={`text-2xl font-bold ${
-                            app.aiScore >= 70 ? "text-success" : app.aiScore >= 50 ? "text-primary" : "text-muted-foreground"
+                            app.ai_score >= 70 ? "text-success" : app.ai_score >= 50 ? "text-primary" : "text-muted-foreground"
                           }`}>
-                            {app.aiScore}%
+                            {app.ai_score}%
                           </div>
                           <div className="text-xs text-muted-foreground">AI Score</div>
                         </div>
@@ -138,12 +197,12 @@ const HRDashboard = () => {
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{candidate.applicantName}</div>
+                        <div className="font-medium truncate">{candidate.applicant_name}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {jobs.find((j) => j.id === candidate.jobId)?.title}
+                          {jobs.find((j) => j.id === candidate.job_id)?.title || "Unknown"}
                         </div>
                       </div>
-                      <div className="font-semibold text-success">{candidate.aiScore}%</div>
+                      <div className="font-semibold text-success">{candidate.ai_score}%</div>
                     </div>
                   ))}
                 </div>
@@ -157,25 +216,31 @@ const HRDashboard = () => {
             {/* Open Positions */}
             <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Open Positions</h2>
+                <h2 className="text-lg font-semibold">My Open Positions</h2>
                 <Link to="/hr/jobs" className="text-primary text-sm hover:underline">
                   Manage
                 </Link>
               </div>
-              <div className="space-y-3">
-                {jobs.slice(0, 4).map((job) => {
-                  const appCount = applications.filter((a) => a.jobId === job.id).length;
-                  return (
-                    <div key={job.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
-                      <div>
-                        <div className="font-medium text-sm">{job.title}</div>
-                        <div className="text-xs text-muted-foreground">{job.department}</div>
+              {jobs.length > 0 ? (
+                <div className="space-y-3">
+                  {jobs.slice(0, 4).map((job) => {
+                    const appCount = applications.filter((a) => a.job_id === job.id).length;
+                    return (
+                      <div key={job.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
+                        <div>
+                          <div className="font-medium text-sm">{job.title}</div>
+                          <div className="text-xs text-muted-foreground">{job.department}</div>
+                        </div>
+                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs font-medium">{appCount}</span>
                       </div>
-                      <span className="badge-primary">{appCount}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No jobs created yet
+                </p>
+              )}
             </div>
           </div>
         </div>

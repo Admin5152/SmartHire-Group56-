@@ -1,37 +1,92 @@
-import { useState } from "react";
-import { Search, Filter, CheckCircle, XCircle, Eye, ChevronDown, FileText, Briefcase } from "lucide-react";
-import { useJobs, Application } from "@/contexts/JobsContext";
+import { useState, useEffect } from "react";
+import { Search, Filter, CheckCircle, XCircle, ChevronDown, FileText, Briefcase, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface Application {
+  id: string;
+  job_id: string;
+  applicant_id: string;
+  applicant_name: string;
+  applicant_email: string;
+  resume_file_name: string;
+  resume_text: string | null;
+  ai_score: number;
+  matched_skills: string[];
+  status: string;
+  applied_date: string;
+}
+
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  tech_stack: string[];
+  created_by: string;
+  is_external: boolean;
+}
+
 const Applicants = () => {
-  const { jobs, applications, updateApplicationStatus } = useJobs();
   const { user } = useAuth();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterJob, setFilterJob] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"my" | "others">("my");
 
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  const fetchData = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      // Fetch jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("*");
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .order("ai_score", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Filter jobs by ownership
-  const myJobs = jobs.filter((job) => job.createdBy === user?.id);
-  const otherJobs = jobs.filter((job) => job.createdBy !== user?.id);
+  const myJobs = jobs.filter((job) => job.created_by === user?.id && !job.is_external);
+  const otherJobs = jobs.filter((job) => job.created_by !== user?.id || job.is_external);
   const myJobIds = myJobs.map((j) => j.id);
 
   // Filter applications by job ownership
-  const myApplications = applications.filter((app) => myJobIds.includes(app.jobId));
-  const otherApplications = applications.filter((app) => !myJobIds.includes(app.jobId));
+  const myApplications = applications.filter((app) => myJobIds.includes(app.job_id));
+  const otherApplications = applications.filter((app) => !myJobIds.includes(app.job_id));
 
-  // Sort applications by AI score (highest first)
-  const sortedApplications = [...(viewMode === "my" ? myApplications : otherApplications)].sort(
-    (a, b) => b.aiScore - a.aiScore
-  );
+  const currentApplications = viewMode === "my" ? myApplications : otherApplications;
 
-  const filteredApplications = sortedApplications.filter((app) => {
+  const filteredApplications = currentApplications.filter((app) => {
     const matchesSearch =
-      app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.applicantEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesJob = !filterJob || app.jobId === filterJob;
+      app.applicant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.applicant_email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesJob = !filterJob || app.job_id === filterJob;
     const matchesStatus = !filterStatus || app.status === filterStatus;
     return matchesSearch && matchesJob && matchesStatus;
   });
@@ -39,22 +94,46 @@ const Applicants = () => {
   // Get jobs for filter dropdown based on view mode
   const filterJobOptions = viewMode === "my" ? myJobs : otherJobs;
 
-  const handleAccept = (application: Application) => {
-    updateApplicationStatus(
-      application.id,
-      "accepted",
-      `Congratulations! We're pleased to inform you that your application for ${jobs.find((j) => j.id === application.jobId)?.title} has been accepted. Our team will contact you soon with next steps.`
-    );
-    toast.success(`${application.applicantName} has been accepted!`);
+  const handleAccept = async (application: Application) => {
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: "accepted" })
+        .eq("id", application.id);
+
+      if (error) throw error;
+
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === application.id ? { ...app, status: "accepted" } : app
+        )
+      );
+      toast.success(`${application.applicant_name} has been accepted!`);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      toast.error("Failed to update application");
+    }
   };
 
-  const handleReject = (application: Application) => {
-    updateApplicationStatus(
-      application.id,
-      "rejected",
-      `Thank you for your interest in the ${jobs.find((j) => j.id === application.jobId)?.title} position. After careful consideration, we've decided to move forward with other candidates. We encourage you to apply for future opportunities.`
-    );
-    toast.success(`${application.applicantName} has been notified.`);
+  const handleReject = async (application: Application) => {
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: "rejected" })
+        .eq("id", application.id);
+
+      if (error) throw error;
+
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === application.id ? { ...app, status: "rejected" } : app
+        )
+      );
+      toast.success(`${application.applicant_name} has been notified.`);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      toast.error("Failed to update application");
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -63,6 +142,28 @@ const Applicants = () => {
     if (score >= 40) return "text-amber-500 bg-amber-500/10";
     return "text-muted-foreground bg-secondary";
   };
+
+  const highlightMatchedSkills = (text: string, matchedSkills: string[]) => {
+    if (!text || !matchedSkills.length) return text;
+    
+    let highlightedText = text;
+    matchedSkills.forEach((skill) => {
+      const regex = new RegExp(`(${skill})`, "gi");
+      highlightedText = highlightedText.replace(
+        regex,
+        '<mark class="bg-success/30 text-success-foreground px-1 rounded font-semibold">$1</mark>'
+      );
+    });
+    return highlightedText;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen py-12 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
@@ -151,9 +252,9 @@ const Applicants = () => {
           {filteredApplications.length > 0 ? (
             <div className="space-y-4">
               {filteredApplications.map((app, index) => {
-                const job = jobs.find((j) => j.id === app.jobId);
+                const job = jobs.find((j) => j.id === app.job_id);
                 const isExpanded = expandedId === app.id;
-                const isOwnJob = myJobIds.includes(app.jobId);
+                const isOwnJob = myJobIds.includes(app.job_id);
 
                 return (
                   <div
@@ -171,30 +272,34 @@ const Applicants = () => {
                           </div>
                           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-lg font-semibold text-primary">
-                              {app.applicantName.charAt(0).toUpperCase()}
+                              {app.applicant_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
 
                         {/* Info */}
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{app.applicantName}</h3>
-                          <p className="text-sm text-muted-foreground">{app.applicantEmail}</p>
+                          <h3 className="font-semibold text-lg">{app.applicant_name}</h3>
+                          <p className="text-sm text-muted-foreground">{app.applicant_email}</p>
                           <p className="text-sm mt-1">
                             Applied for <span className="font-medium">{job?.title}</span>
                           </p>
                         </div>
 
                         {/* Score */}
-                        <div className={`px-4 py-2 rounded-xl ${getScoreColor(app.aiScore)}`}>
-                          <div className="text-2xl font-bold">{app.aiScore}%</div>
+                        <div className={`px-4 py-2 rounded-xl ${getScoreColor(app.ai_score)}`}>
+                          <div className="text-2xl font-bold">{app.ai_score}%</div>
                           <div className="text-xs">AI Score</div>
                         </div>
 
                         {/* Status */}
                         <div className="flex items-center gap-3">
-                          <span className={`badge-${
-                            app.status === "accepted" ? "success" : app.status === "rejected" ? "destructive" : "primary"
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            app.status === "accepted" 
+                              ? "bg-success/10 text-success" 
+                              : app.status === "rejected" 
+                              ? "bg-destructive/10 text-destructive" 
+                              : "bg-primary/10 text-primary"
                           }`}>
                             {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                           </span>
@@ -231,11 +336,14 @@ const Applicants = () => {
                       </div>
 
                       {/* Matched Skills */}
-                      {app.matchedSkills.length > 0 && (
+                      {app.matched_skills && app.matched_skills.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <span className="text-sm text-muted-foreground mr-2">Matched Skills:</span>
-                          {app.matchedSkills.map((skill) => (
-                            <span key={skill} className="px-2 py-1 bg-success/10 text-success text-xs rounded-lg">
+                          <span className="text-sm text-muted-foreground mr-2 flex items-center gap-1">
+                            <Star className="w-4 h-4" />
+                            Matched Skills:
+                          </span>
+                          {app.matched_skills.map((skill) => (
+                            <span key={skill} className="px-2 py-1 bg-success/10 text-success text-xs rounded-lg font-medium">
                               {skill}
                             </span>
                           ))}
@@ -252,21 +360,28 @@ const Applicants = () => {
                               <FileText className="w-4 h-4" />
                               Resume Text (OCR Extracted)
                             </h4>
-                            <div className="p-4 rounded-xl bg-white/80 text-sm text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">
-                              {app.resumeText}
-                            </div>
+                            <div 
+                              className="p-4 rounded-xl bg-white/80 text-sm text-muted-foreground max-h-[300px] overflow-y-auto"
+                              dangerouslySetInnerHTML={{ 
+                                __html: highlightMatchedSkills(app.resume_text || "No text extracted", app.matched_skills || [])
+                              }}
+                            />
+                            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                              <Star className="w-3 h-3 text-success" />
+                              Highlighted words are skills that matched the job requirements
+                            </p>
                           </div>
                           <div>
                             <h4 className="font-semibold mb-2">Application Details</h4>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between p-2 rounded-lg bg-white/80">
                                 <span className="text-muted-foreground">Resume File</span>
-                                <span className="font-medium">{app.resumeFileName}</span>
+                                <span className="font-medium">{app.resume_file_name}</span>
                               </div>
                               <div className="flex justify-between p-2 rounded-lg bg-white/80">
                                 <span className="text-muted-foreground">Applied Date</span>
                                 <span className="font-medium">
-                                  {new Date(app.appliedDate).toLocaleDateString()}
+                                  {new Date(app.applied_date).toLocaleDateString()}
                                 </span>
                               </div>
                               <div className="flex justify-between p-2 rounded-lg bg-white/80">
@@ -280,7 +395,9 @@ const Applicants = () => {
                               {!isOwnJob && (
                                 <div className="flex justify-between p-2 rounded-lg bg-amber-500/10">
                                   <span className="text-amber-700">Note</span>
-                                  <span className="font-medium text-amber-700">From another HR's job</span>
+                                  <span className="font-medium text-amber-700">
+                                    {job?.is_external ? "External application" : "From another HR's job"}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -299,7 +416,7 @@ const Applicants = () => {
                   <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Applications from Other Jobs</h3>
                   <p className="text-muted-foreground">
-                    Applications for jobs created by other HR users will appear here.
+                    Applications for external jobs or jobs created by other HR users will appear here.
                   </p>
                 </>
               ) : (

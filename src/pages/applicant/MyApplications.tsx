@@ -1,15 +1,75 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Clock, CheckCircle, XCircle, ArrowRight, Briefcase, PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobs } from "@/contexts/JobsContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Application {
+  id: string;
+  job_id: string;
+  applicant_name: string;
+  resume_file_name: string;
+  ai_score: number;
+  matched_skills: string[];
+  status: string;
+  applied_date: string;
+}
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  tech_stack: string[];
+  department: string;
+  location: string;
+  type: string;
+  is_external?: boolean;
+}
 
 const MyApplications = () => {
   const { user } = useAuth();
-  const { jobs, getApplicationsByApplicant, getJobById } = useJobs();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const applications = getApplicationsByApplicant(user?.id || "");
-  const appliedJobIds = applications.map((app) => app.jobId);
-  const availableJobs = jobs.filter((job) => !appliedJobIds.includes(job.id));
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("applicant_id", user.id)
+        .order("applied_date", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+
+      // Fetch jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("*")
+        .order("posted_date", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const appliedJobIds = applications.map((app) => app.job_id);
+  const availableJobs = jobs.filter((job) => !appliedJobIds.includes(job.id) && !job.is_external);
+  const getJobById = (jobId: string) => jobs.find((j) => j.id === jobId);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -25,13 +85,21 @@ const MyApplications = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
-        return "badge-success";
+        return "bg-success/10 text-success px-3 py-1 rounded-full text-sm font-medium";
       case "rejected":
-        return "badge-destructive";
+        return "bg-destructive/10 text-destructive px-3 py-1 rounded-full text-sm font-medium";
       default:
-        return "badge-primary";
+        return "bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
@@ -45,12 +113,10 @@ const MyApplications = () => {
                 Track the status of all your job applications.
               </p>
             </div>
-            {availableJobs.length > 0 && (
-              <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
-                <PlusCircle className="w-5 h-5" />
-                Apply for a Job
-              </Link>
-            )}
+            <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+              <PlusCircle className="w-5 h-5" />
+              Apply for a Job
+            </Link>
           </div>
 
           {/* Applied Jobs Section */}
@@ -59,7 +125,7 @@ const MyApplications = () => {
               <h2 className="text-xl font-semibold mb-4">Your Applications</h2>
               <div className="space-y-4">
                 {applications.map((app, index) => {
-                  const job = getJobById(app.jobId);
+                  const job = getJobById(app.job_id);
                   return (
                     <div
                       key={app.id}
@@ -73,7 +139,7 @@ const MyApplications = () => {
                             <h3 className="text-lg font-semibold">{job?.title || "Unknown Position"}</h3>
                           </div>
                           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
-                            <span>Applied: {new Date(app.appliedDate).toLocaleDateString()}</span>
+                            <span>Applied: {new Date(app.applied_date).toLocaleDateString()}</span>
                             <span>•</span>
                             <span>{job?.department}</span>
                             <span>•</span>
@@ -84,25 +150,25 @@ const MyApplications = () => {
                               {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                             </span>
                             <span className="text-sm">
-                              AI Score: <span className="font-semibold text-primary">{app.aiScore}%</span>
+                              AI Score: <span className="font-semibold text-primary">{app.ai_score}%</span>
                             </span>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <FileText className="w-4 h-4" />
-                            {app.resumeFileName}
+                            {app.resume_file_name}
                           </div>
-                          {app.matchedSkills.length > 0 && (
+                          {app.matched_skills && app.matched_skills.length > 0 && (
                             <div className="flex flex-wrap gap-1 justify-end">
-                              {app.matchedSkills.slice(0, 3).map((skill) => (
+                              {app.matched_skills.slice(0, 3).map((skill) => (
                                 <span key={skill} className="px-2 py-0.5 bg-success/10 text-success text-xs rounded-lg">
                                   {skill}
                                 </span>
                               ))}
-                              {app.matchedSkills.length > 3 && (
+                              {app.matched_skills.length > 3 && (
                                 <span className="text-xs text-muted-foreground">
-                                  +{app.matchedSkills.length - 3} more
+                                  +{app.matched_skills.length - 3} more
                                 </span>
                               )}
                             </div>
@@ -132,20 +198,20 @@ const MyApplications = () => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-3 mb-2">
-                          <span className="badge-primary">{job.type}</span>
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{job.type}</span>
                           <span className="text-sm text-muted-foreground">{job.department}</span>
                         </div>
                         <h3 className="text-lg font-semibold mb-2">{job.title}</h3>
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
                         <div className="flex flex-wrap gap-2">
-                          {job.techStack.slice(0, 4).map((tech) => (
+                          {job.tech_stack?.slice(0, 4).map((tech) => (
                             <span key={tech} className="px-2 py-1 bg-secondary text-xs rounded-lg">
                               {tech}
                             </span>
                           ))}
-                          {job.techStack.length > 4 && (
+                          {job.tech_stack && job.tech_stack.length > 4 && (
                             <span className="px-2 py-1 bg-secondary text-xs rounded-lg text-muted-foreground">
-                              +{job.techStack.length - 4}
+                              +{job.tech_stack.length - 4}
                             </span>
                           )}
                         </div>
@@ -180,8 +246,8 @@ const MyApplications = () => {
               <p className="text-muted-foreground mb-6">
                 Start exploring open positions and apply for your dream job.
               </p>
-              <Link to="/jobs" className="btn-primary inline-flex items-center gap-2">
-                Browse Available Jobs
+              <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+                Apply for a Job
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

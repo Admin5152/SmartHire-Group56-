@@ -1,20 +1,64 @@
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { MapPin, Clock, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
-import { useJobs } from "@/contexts/JobsContext";
+import { MapPin, Clock, ArrowLeft, ArrowRight, CheckCircle, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  tech_stack: string[];
+  requirements: string[];
+  department: string;
+  location: string;
+  type: string;
+  posted_date: string;
+}
 
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getJobById } = useJobs();
   const { user } = useAuth();
+  const [job, setJob] = useState<Job | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const job = getJobById(id || "");
+  useEffect(() => {
+    if (id) {
+      fetchJob();
+    }
+  }, [id]);
+
+  const fetchJob = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setJob(data);
+    } catch (error) {
+      console.error("Error fetching job:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!job) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-12 text-center max-w-xl">
+          <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Job not found</h3>
           <p className="text-muted-foreground mb-6">
             The position you're looking for doesn't exist or has been removed.
@@ -44,7 +88,7 @@ const JobDetails = () => {
           {/* Job Header */}
           <div className="glass-card p-8 mb-8 animate-fade-in-up">
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="badge-primary">{job.type}</span>
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{job.type}</span>
               <span className="text-sm text-muted-foreground">{job.department}</span>
             </div>
 
@@ -57,7 +101,7 @@ const JobDetails = () => {
               </span>
               <span className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Posted {new Date(job.postedDate).toLocaleDateString()}
+                Posted {new Date(job.posted_date).toLocaleDateString()}
               </span>
             </div>
 
@@ -88,33 +132,37 @@ const JobDetails = () => {
                 <p className="text-muted-foreground leading-relaxed">{job.description}</p>
               </div>
 
-              <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-                <ul className="space-y-3">
-                  {job.requirements.map((req, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {job.requirements && job.requirements.length > 0 && (
+                <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+                  <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+                  <ul className="space-y-3">
+                    {job.requirements.map((req, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{req}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="space-y-8">
-              <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "300ms" }}>
-                <h2 className="text-lg font-semibold mb-4">Tech Stack</h2>
-                <div className="flex flex-wrap gap-2">
-                  {job.techStack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="px-3 py-2 bg-primary/10 text-primary text-sm rounded-lg font-medium"
-                    >
-                      {tech}
-                    </span>
-                  ))}
+              {job.tech_stack && job.tech_stack.length > 0 && (
+                <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "300ms" }}>
+                  <h2 className="text-lg font-semibold mb-4">Tech Stack</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {job.tech_stack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="px-3 py-2 bg-primary/10 text-primary text-sm rounded-lg font-medium"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
                 <h2 className="text-lg font-semibold mb-4">Quick Info</h2>

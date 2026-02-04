@@ -35,6 +35,7 @@ const Sidebar = ({ userRole, onSignOut }: SidebarProps) => {
   const applicantLinks = [
     { to: "/applicant/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/jobs", icon: Briefcase, label: "Browse Jobs" },
+    { to: "/apply", icon: FileText, label: "Apply for Job" },
     { to: "/applicant/applications", icon: FileText, label: "My Applications" },
     { to: "/applicant/notifications", icon: Bell, label: "Notifications" },
   ];
@@ -65,11 +66,11 @@ const Sidebar = ({ userRole, onSignOut }: SidebarProps) => {
       <div className="p-6 border-b border-border">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md">
-            <span className="text-xl font-bold text-primary-foreground">X</span>
+            <span className="text-xl font-bold text-primary-foreground">S</span>
           </div>
           {!collapsed && (
             <span className="text-xl font-bold text-foreground animate-fade-in">
-              Company X
+              SmartHire
             </span>
           )}
         </Link>

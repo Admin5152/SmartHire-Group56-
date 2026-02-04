@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Briefcase, Building2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, User, Briefcase, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -33,10 +33,10 @@ const SignUp = () => {
     setIsLoading(true);
     try {
       await signUp(email, password, name, role);
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully! Please check your email to verify.");
       navigate(role === "applicant" ? "/applicant/dashboard" : "/hr/dashboard");
-    } catch (error) {
-      toast.error("Failed to create account. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -90,14 +90,23 @@ const SignUp = () => {
       </div>
 
       <div className="w-full max-w-md animate-fade-in-up relative z-10">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Home</span>
+        </button>
+
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
-              <span className="text-2xl font-bold text-primary-foreground">X</span>
+              <span className="text-2xl font-bold text-primary-foreground">S</span>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
-          <p className="text-muted-foreground">Join Company X and start your journey</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-white/80">Join SmartHire and start your journey</p>
         </div>
 
         <div className="glass-card p-8 backdrop-blur-xl bg-white/90 border border-white/20 shadow-2xl">
@@ -132,6 +141,12 @@ const SignUp = () => {
               </span>
             </button>
           </div>
+
+          {role === "hr" && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+              <strong>Note:</strong> HR accounts require admin credentials to create.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
