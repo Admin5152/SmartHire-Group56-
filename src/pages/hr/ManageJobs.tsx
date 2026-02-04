@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, MapPin, Clock, Users, PlusCircle, ArrowRight, Edit, Trash2, X, Check } from "lucide-react";
-import { useJobs, Job } from "@/contexts/JobsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -15,15 +15,65 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  tech_stack: string[];
+  department: string;
+  location: string;
+  type: string;
+  posted_date: string;
+  created_by: string;
+}
+
+interface Application {
+  id: string;
+  job_id: string;
+  status: string;
+}
+
 const ManageJobs = () => {
-  const { jobs, applications, updateJob, deleteJob } = useJobs();
   const { user } = useAuth();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Job>>({});
 
-  // Filter jobs created by this HR user
-  const myJobs = jobs.filter((job) => job.createdBy === user?.id);
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      // Fetch jobs created by this HR user
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("created_by", user?.id)
+        .order("posted_date", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("id, job_id, status");
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load jobs");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleStartEdit = (job: Job) => {
     setEditingJobId(job.id);
@@ -41,24 +91,68 @@ const ManageJobs = () => {
     setEditForm({});
   };
 
-  const handleSaveEdit = (jobId: string) => {
+  const handleSaveEdit = async (jobId: string) => {
     if (!editForm.title || !editForm.description || !editForm.department || !editForm.location) {
       toast.error("Please fill in all required fields");
       return;
     }
-    updateJob(jobId, editForm);
-    setEditingJobId(null);
-    setEditForm({});
-    toast.success("Job updated successfully!");
+
+    try {
+      const { error } = await supabase
+        .from("jobs")
+        .update({
+          title: editForm.title,
+          description: editForm.description,
+          department: editForm.department,
+          location: editForm.location,
+          type: editForm.type,
+        })
+        .eq("id", jobId);
+
+      if (error) throw error;
+
+      setJobs((prev) =>
+        prev.map((job) =>
+          job.id === jobId ? { ...job, ...editForm } : job
+        )
+      );
+      setEditingJobId(null);
+      setEditForm({});
+      toast.success("Job updated successfully!");
+    } catch (error) {
+      console.error("Error updating job:", error);
+      toast.error("Failed to update job");
+    }
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteJobId) {
-      deleteJob(deleteJobId);
+  const handleDeleteConfirm = async () => {
+    if (!deleteJobId) return;
+
+    try {
+      const { error } = await supabase
+        .from("jobs")
+        .delete()
+        .eq("id", deleteJobId);
+
+      if (error) throw error;
+
+      setJobs((prev) => prev.filter((job) => job.id !== deleteJobId));
       toast.success("Job deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      toast.error("Failed to delete job");
+    } finally {
       setDeleteJobId(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
@@ -80,10 +174,10 @@ const ManageJobs = () => {
 
           {/* Jobs List */}
           <div className="space-y-4">
-            {myJobs.map((job, index) => {
-              const appCount = applications.filter((a) => a.jobId === job.id).length;
+            {jobs.map((job, index) => {
+              const appCount = applications.filter((a) => a.job_id === job.id).length;
               const pendingCount = applications.filter(
-                (a) => a.jobId === job.id && (a.status === "pending" || a.status === "reviewing")
+                (a) => a.job_id === job.id && (a.status === "pending" || a.status === "reviewing")
               ).length;
               const isEditing = editingJobId === job.id;
 
@@ -129,7 +223,7 @@ const ManageJobs = () => {
                           <label className="block text-sm font-medium mb-1">Type</label>
                           <select
                             value={editForm.type || "Full-time"}
-                            onChange={(e) => setEditForm({ ...editForm, type: e.target.value as Job["type"] })}
+                            onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
                             className="input-field"
                           >
                             <option value="Full-time">Full-time</option>
@@ -168,7 +262,7 @@ const ManageJobs = () => {
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-3 mb-2">
-                          <span className="badge-primary">{job.type}</span>
+                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{job.type}</span>
                           <span className="text-sm text-muted-foreground">{job.department}</span>
                         </div>
                         <h2 className="text-xl font-bold mb-2">{job.title}</h2>
@@ -179,21 +273,23 @@ const ManageJobs = () => {
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            Posted {new Date(job.postedDate).toLocaleDateString()}
+                            Posted {new Date(job.posted_date).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {job.techStack.slice(0, 4).map((tech) => (
-                            <span key={tech} className="px-2 py-1 bg-secondary text-sm rounded-lg">
-                              {tech}
-                            </span>
-                          ))}
-                          {job.techStack.length > 4 && (
-                            <span className="px-2 py-1 bg-secondary text-sm rounded-lg text-muted-foreground">
-                              +{job.techStack.length - 4}
-                            </span>
-                          )}
-                        </div>
+                        {job.tech_stack && job.tech_stack.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {job.tech_stack.slice(0, 4).map((tech) => (
+                              <span key={tech} className="px-2 py-1 bg-secondary text-sm rounded-lg">
+                                {tech}
+                              </span>
+                            ))}
+                            {job.tech_stack.length > 4 && (
+                              <span className="px-2 py-1 bg-secondary text-sm rounded-lg text-muted-foreground">
+                                +{job.tech_stack.length - 4}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-6">
@@ -226,7 +322,7 @@ const ManageJobs = () => {
                             <Trash2 className="w-4 h-4" />
                           </button>
                           <Link
-                            to={`/hr/applicants?job=${job.id}`}
+                            to="/hr/applicants"
                             className="btn-secondary inline-flex items-center gap-2"
                           >
                             View Applicants
@@ -241,7 +337,7 @@ const ManageJobs = () => {
             })}
           </div>
 
-          {myJobs.length === 0 && (
+          {jobs.length === 0 && (
             <div className="glass-card p-12 text-center animate-fade-in-up">
               <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No Jobs Posted</h3>

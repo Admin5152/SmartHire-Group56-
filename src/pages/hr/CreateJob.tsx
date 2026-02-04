@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { useJobs, Job } from "@/contexts/JobsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const CreateJob = () => {
   const navigate = useNavigate();
-  const { addJob } = useJobs();
   const { user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
   const [location, setLocation] = useState("");
-  const [type, setType] = useState<Job["type"]>("Full-time");
+  const [type, setType] = useState("Full-time");
   const [techStack, setTechStack] = useState<string[]>([]);
   const [techInput, setTechInput] = useState("");
   const [requirements, setRequirements] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddTech = () => {
     if (techInput.trim() && !techStack.includes(techInput.trim())) {
@@ -42,7 +42,7 @@ const CreateJob = () => {
     setRequirements(requirements.filter((r) => r !== req));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title || !description || !department || !location || techStack.length === 0) {
@@ -50,19 +50,31 @@ const CreateJob = () => {
       return;
     }
 
-    addJob({
-      title,
-      description,
-      department,
-      location,
-      type,
-      techStack,
-      requirements: requirements.length > 0 ? requirements : ["No specific requirements listed"],
-      createdBy: user?.id || "",
-    });
+    setIsSubmitting(true);
 
-    toast.success("Job created successfully!");
-    navigate("/hr/jobs");
+    try {
+      const { error } = await supabase.from("jobs").insert({
+        title,
+        description,
+        department,
+        location,
+        type,
+        tech_stack: techStack,
+        requirements: requirements.length > 0 ? requirements : ["No specific requirements listed"],
+        created_by: user?.id,
+        is_external: false,
+      });
+
+      if (error) throw error;
+
+      toast.success("Job created successfully!");
+      navigate("/hr/jobs");
+    } catch (error) {
+      console.error("Error creating job:", error);
+      toast.error("Failed to create job");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -124,7 +136,7 @@ const CreateJob = () => {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="input-field"
-                    placeholder="e.g., Remote / New York"
+                    placeholder="e.g., Remote / Accra"
                   />
                 </div>
               </div>
@@ -134,7 +146,7 @@ const CreateJob = () => {
                 <label className="block text-sm font-medium mb-2">Job Type *</label>
                 <select
                   value={type}
-                  onChange={(e) => setType(e.target.value as Job["type"])}
+                  onChange={(e) => setType(e.target.value)}
                   className="input-field"
                 >
                   <option value="Full-time">Full-time</option>
@@ -224,8 +236,12 @@ const CreateJob = () => {
 
               {/* Submit */}
               <div className="flex gap-4">
-                <button type="submit" className="btn-primary flex-1">
-                  Create Job
+                <button 
+                  type="submit" 
+                  className="btn-primary flex-1"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating..." : "Create Job"}
                 </button>
                 <button
                   type="button"

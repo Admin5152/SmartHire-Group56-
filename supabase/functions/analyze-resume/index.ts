@@ -54,7 +54,9 @@ serve(async (req) => {
     formData.append('filetype', ocrFileType);
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
-    formData.append('OCREngine', '2'); // More accurate OCR engine
+    formData.append('OCREngine', '2');
+    formData.append('isCreateSearchablePdf', 'false');
+    formData.append('isTable', 'true');
 
     console.log('Calling OCR.space API...');
     

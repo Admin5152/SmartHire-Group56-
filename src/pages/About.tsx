@@ -2,15 +2,6 @@ import { Link } from "react-router-dom";
 import { Users, Rocket, Target, Heart, Award, Globe, Zap, Shield } from "lucide-react";
 
 const About = () => {
-  const milestones = [
-    { year: "2015", title: "Founded", description: "Started with a vision to transform technology" },
-    { year: "2017", title: "Series A", description: "Raised $10M to scale operations" },
-    { year: "2019", title: "Global Expansion", description: "Opened offices in 5 countries" },
-    { year: "2021", title: "100K Users", description: "Reached our first major milestone" },
-    { year: "2023", title: "Series C", description: "Raised $100M for global growth" },
-    { year: "2024", title: "50M Users", description: "Serving millions worldwide" },
-  ];
-
   const benefits = [
     { icon: Globe, title: "Remote First", description: "Work from anywhere in the world" },
     { icon: Award, title: "Competitive Pay", description: "Top-tier compensation packages" },
@@ -25,9 +16,9 @@ const About = () => {
       <div className="container mx-auto px-6">
         {/* Hero */}
         <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="section-title mb-4">About Company X</h1>
+          <h1 className="section-title mb-4">About SmartHire</h1>
           <p className="section-subtitle mx-auto">
-            We're building the future of technology, one innovation at a time.
+            We're revolutionizing the hiring process with AI-powered solutions.
           </p>
         </div>
 
@@ -36,38 +27,31 @@ const About = () => {
           <h2 className="text-2xl font-bold mb-6">Our Story</h2>
           <div className="prose prose-lg text-muted-foreground">
             <p className="mb-4">
-              Company X was founded in 2015 with a simple mission: to make complex technology accessible to everyone. What started as a small team of passionate engineers has grown into a global company serving millions of users.
+              SmartHire began as a university project at KNUST (Kwame Nkrumah University of Science and Technology) 
+              in Ghana. What started as a group assignment for our software engineering course quickly became 
+              something much bigger when we realized the real-world problem we were solving.
             </p>
             <p className="mb-4">
-              Today, we're at the forefront of innovation, building products that transform how businesses operate and how people work. Our diverse team of over 500 talented individuals brings together unique perspectives and expertise from around the world.
+              As students, we saw firsthand how frustrating the job application process was—both for applicants 
+              who felt their resumes were getting lost, and for recruiters drowning in hundreds of applications. 
+              We knew there had to be a smarter way.
+            </p>
+            <p className="mb-4">
+              Our team of five passionate students built the first version of SmartHire in just three months. 
+              The AI-powered resume analyzer we developed could match candidates to job requirements in seconds, 
+              saving HR teams hours of manual screening while giving applicants a fairer chance.
             </p>
             <p>
-              We believe that the best ideas come from collaboration, and we're committed to creating an environment where everyone can thrive and do their best work.
+              Today, SmartHire serves companies across Ghana and beyond, helping them find the best talent 
+              faster than ever. We're proud of our KNUST roots and continue to innovate with the same 
+              collaborative spirit that started it all.
             </p>
-          </div>
-        </div>
-
-        {/* Timeline */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Our Journey</h2>
-          <div className="grid md:grid-cols-6 gap-4 max-w-5xl mx-auto">
-            {milestones.map((milestone, index) => (
-              <div
-                key={milestone.year}
-                className="glass-card p-6 text-center animate-fade-in-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="text-2xl font-bold text-primary mb-2">{milestone.year}</div>
-                <div className="font-semibold mb-1">{milestone.title}</div>
-                <div className="text-sm text-muted-foreground">{milestone.description}</div>
-              </div>
-            ))}
           </div>
         </div>
 
         {/* Benefits */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Why Join Us</h2>
+          <h2 className="text-2xl font-bold text-center mb-8">Why Join Companies Using SmartHire</h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {benefits.map((benefit, index) => (
               <div

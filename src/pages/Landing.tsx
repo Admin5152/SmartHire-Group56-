@@ -1,11 +1,39 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Users, Rocket, Target, Heart, Briefcase, ChevronRight, Phone, Award, Globe, Zap, Shield, Mail, MapPin } from "lucide-react";
 import { useJobs } from "@/contexts/JobsContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  tech_stack: string[];
+  requirements: string[];
+  department: string;
+  location: string;
+  type: string;
+  posted_date: string;
+}
 
 const Landing = () => {
-  const { jobs } = useJobs();
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [showContact, setShowContact] = useState(false);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .order("posted_date", { ascending: false })
+        .limit(6);
+      
+      if (!error && data) {
+        setJobs(data);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const values = [
     {
@@ -30,15 +58,6 @@ const Landing = () => {
     },
   ];
 
-  const milestones = [
-    { year: "2015", title: "Founded", description: "Started with a vision to transform technology" },
-    { year: "2017", title: "Series A", description: "Raised $10M to scale operations" },
-    { year: "2019", title: "Global Expansion", description: "Opened offices in 5 countries" },
-    { year: "2021", title: "100K Users", description: "Reached our first major milestone" },
-    { year: "2023", title: "Series C", description: "Raised $100M for global growth" },
-    { year: "2024", title: "50M Users", description: "Serving millions worldwide" },
-  ];
-
   const benefits = [
     { icon: Globe, title: "Remote First", description: "Work from anywhere in the world" },
     { icon: Award, title: "Competitive Pay", description: "Top-tier compensation packages" },
@@ -58,7 +77,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen w-full">
-      {/* Hero Section with Video Background - full viewport, no sidebar gap */}
+      {/* Hero Section with Video Background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Video Background */}
         <video
@@ -71,7 +90,7 @@ const Landing = () => {
           <source src="/videos/hero-background.mp4" type="video/mp4" />
         </video>
         
-        {/* Gradient overlay for better text readability */}
+        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
         
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 text-center">
@@ -96,7 +115,7 @@ const Landing = () => {
                   textShadow: '0 2px 15px rgba(0,0,0,0.5)'
                 }}
               >
-                We're glad you're here
+                Glad you're here
               </p>
             </div>
             
@@ -137,19 +156,16 @@ const Landing = () => {
       <section className="py-12 sm:py-16 md:py-24 bg-white">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center mb-16 animate-fade-in-up">
-            <h2 className="section-title mb-6">About Company X</h2>
-            <p className="section-subtitle mx-auto text-lg mb-8">
-              Founded in 2015, Company X has grown from a small startup to a leading technology company serving millions of users worldwide. We build products that make complex processes simple and empower businesses to achieve more.
-            </p>
+            <h2 className="section-title mb-6">About SmartHire</h2>
             <div className="prose prose-lg text-muted-foreground text-left max-w-3xl mx-auto">
-              <p className="mb-4">
-                Company X was founded in 2015 with a simple mission: to make complex technology accessible to everyone. What started as a small team of passionate engineers has grown into a global company serving millions of users.
+              <p className="mb-4 text-lg">
+                SmartHire started as a simple idea during our time as students at KNUST (Kwame Nkrumah University of Science and Technology). What began as a group project for our software engineering class has grown into something we never imagined.
               </p>
               <p className="mb-4">
-                Today, we're at the forefront of innovation, building products that transform how businesses operate and how people work. Our diverse team of over 500 talented individuals brings together unique perspectives and expertise from around the world.
+                We noticed how difficult and inefficient the hiring process was for both employers and job seekers. Traditional resume screening was time-consuming, often biased, and missed great candidates. That's when we decided to build a smarter solution.
               </p>
               <p>
-                We believe that the best ideas come from collaboration, and we're committed to creating an environment where everyone can thrive and do their best work.
+                Today, SmartHire uses AI-powered resume analysis to help companies find the best talent faster, while giving applicants a fair chance to showcase their skills. We're proud to serve companies across Ghana and beyond, and we're just getting started.
               </p>
             </div>
           </div>
@@ -157,10 +173,10 @@ const Landing = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-16">
             {[
-              { value: "500+", label: "Team Members" },
-              { value: "50M+", label: "Users Worldwide" },
-              { value: "30+", label: "Countries" },
-              { value: "99.9%", label: "Uptime" },
+              { value: "50+", label: "Companies" },
+              { value: "1000+", label: "Jobs Posted" },
+              { value: "5000+", label: "Applicants" },
+              { value: "98%", label: "Satisfaction" },
             ].map((stat, index) => (
               <div
                 key={stat.label}
@@ -171,24 +187,6 @@ const Landing = () => {
                 <div className="text-muted-foreground">{stat.label}</div>
               </div>
             ))}
-          </div>
-
-          {/* Timeline */}
-          <div className="mb-16">
-            <h2 className="text-3xl font-bold text-center mb-8">Our Journey</h2>
-            <div className="grid md:grid-cols-6 gap-4 max-w-5xl mx-auto">
-              {milestones.map((milestone, index) => (
-                <div
-                  key={milestone.year}
-                  className="glass-card p-6 text-center animate-fade-in-up hover:shadow-lg transition-shadow"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="text-2xl font-bold text-primary mb-2">{milestone.year}</div>
-                  <div className="font-semibold mb-1">{milestone.title}</div>
-                  <div className="text-sm text-muted-foreground">{milestone.description}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -324,67 +322,74 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {jobs.slice(0, 6).map((job, index) => (
-              <div
-                key={job.id}
-                className="glass-card-hover p-6 animate-fade-in-up group"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors">
-                      {job.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">{job.department}</p>
+          {jobs.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {jobs.map((job, index) => (
+                <div
+                  key={job.id}
+                  className="glass-card-hover p-6 animate-fade-in-up group"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors">
+                        {job.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">{job.department}</p>
+                    </div>
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
+                      {job.type}
+                    </span>
                   </div>
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
-                    {job.type}
-                  </span>
-                </div>
 
-                <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                    {job.description}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4" />
-                    <span>{job.location}</span>
-                  </div>
-                </div>
-
-                {/* Tech Stack */}
-                {job.requirements && job.requirements.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Tech Stack:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {job.requirements.slice(0, 4).map((tech, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 bg-background text-foreground rounded text-xs border border-border"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                      {job.requirements.length > 4 && (
-                        <span className="px-2 py-1 text-xs text-muted-foreground">
-                          +{job.requirements.length - 4} more
-                        </span>
-                      )}
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {job.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                      <MapPin className="w-4 h-4" />
+                      <span>{job.location}</span>
                     </div>
                   </div>
-                )}
 
-                <Link
-                  to={`/jobs/${job.id}`}
-                  className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all text-sm group"
-                >
-                  View Details
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
+                  {job.tech_stack && job.tech_stack.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Tech Stack:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {job.tech_stack.slice(0, 4).map((tech, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-background text-foreground rounded text-xs border border-border"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                        {job.tech_stack.length > 4 && (
+                          <span className="px-2 py-1 text-xs text-muted-foreground">
+                            +{job.tech_stack.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <Link
+                    to={`/jobs/${job.id}`}
+                    className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all text-sm group"
+                  >
+                    View Details
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No open positions yet</h3>
+              <p className="text-muted-foreground">Check back soon for new opportunities!</p>
+            </div>
+          )}
 
           {jobs.length > 6 && (
             <div className="text-center mt-12">
@@ -410,7 +415,7 @@ const Landing = () => {
             Ready to Build the Future?
           </h2>
           <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-            Take the first step towards an exciting career at Company X. We can't wait to meet you.
+            Take the first step towards an exciting career at SmartHire. We can't wait to meet you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
@@ -437,9 +442,9 @@ const Landing = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <span className="text-xl font-bold text-primary-foreground">X</span>
+                <span className="text-xl font-bold text-primary-foreground">S</span>
               </div>
-              <span className="text-xl font-bold text-primary-foreground">Company X</span>
+              <span className="text-xl font-bold text-primary-foreground">SmartHire</span>
             </div>
             <div className="flex gap-6 text-sm">
               <a href="#about" className="hover:text-primary-foreground transition-colors">About</a>
@@ -448,7 +453,7 @@ const Landing = () => {
               <a href="#" className="hover:text-primary-foreground transition-colors">Terms</a>
             </div>
             <div className="text-sm">
-              © 2024 Company X. All rights reserved.
+              © 2024 SmartHire. All rights reserved.
             </div>
           </div>
         </div>
@@ -472,8 +477,8 @@ const Landing = () => {
                 <Phone className="w-5 h-5 text-primary mt-0.5" />
                 <div>
                   <p className="font-semibold text-sm">Phone</p>
-                  <a href="tel:+1234567890" className="text-muted-foreground hover:text-primary transition-colors">
-                    +1 (234) 567-890
+                  <a href="tel:+233241234567" className="text-muted-foreground hover:text-primary transition-colors">
+                    +233 24 123 4567
                   </a>
                 </div>
               </div>
@@ -481,8 +486,8 @@ const Landing = () => {
                 <Mail className="w-5 h-5 text-primary mt-0.5" />
                 <div>
                   <p className="font-semibold text-sm">Email</p>
-                  <a href="mailto:careers@companyx.com" className="text-muted-foreground hover:text-primary transition-colors">
-                    careers@companyx.com
+                  <a href="mailto:careers@smarthire.com" className="text-muted-foreground hover:text-primary transition-colors">
+                    careers@smarthire.com
                   </a>
                 </div>
               </div>
@@ -491,8 +496,8 @@ const Landing = () => {
                 <div>
                   <p className="font-semibold text-sm">Office</p>
                   <p className="text-muted-foreground text-sm">
-                    123 Tech Street<br />
-                    San Francisco, CA 94105
+                    KNUST Campus<br />
+                    Kumasi, Ghana
                   </p>
                 </div>
               </div>

@@ -2,26 +2,66 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Briefcase, FileText, User, ArrowRight, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobs } from "@/contexts/JobsContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Application {
+  id: string;
+  job_id: string;
+  applicant_id: string;
+  applicant_name: string;
+  applicant_email: string;
+  resume_file_name: string;
+  ai_score: number;
+  status: string;
+  applied_date: string;
+}
+
+interface Job {
+  id: string;
+  title: string;
+}
 
 const ApplicantDashboard = () => {
-  const { user, isFirstLogin, setIsFirstLogin } = useAuth();
-  const { getApplicationsByApplicant, notifications, getJobById } = useJobs();
-  const [showWelcome, setShowWelcome] = useState(isFirstLogin);
-
-  const applications = getApplicationsByApplicant(user?.id || "");
-  const userNotifications = notifications.filter((n) => n.userId === user?.id);
-  const unreadNotifications = userNotifications.filter((n) => !n.read);
+  const { user } = useAuth();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isFirstLogin) {
-      const timer = setTimeout(() => {
-        setShowWelcome(false);
-        setIsFirstLogin(false);
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (user) {
+      fetchData();
     }
-  }, [isFirstLogin, setIsFirstLogin]);
+  }, [user]);
+
+  const fetchData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("applicant_id", user.id)
+        .order("applied_date", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+
+      // Fetch jobs for application titles
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("id, title");
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getJobById = (jobId: string) => jobs.find((j) => j.id === jobId);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -37,28 +77,18 @@ const ApplicantDashboard = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
-        return "badge-success";
+        return "bg-success/10 text-success px-3 py-1 rounded-full text-sm font-medium";
       case "rejected":
-        return "badge-destructive";
+        return "bg-destructive/10 text-destructive px-3 py-1 rounded-full text-sm font-medium";
       default:
-        return "badge-primary";
+        return "bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium";
     }
   };
 
-  if (showWelcome) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
-        <div className="text-center animate-fade-in">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-8">
-            <span className="text-5xl">🎉</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Welcome, {user?.name}!
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            We're excited to have you on board.
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -72,7 +102,7 @@ const ApplicantDashboard = () => {
             Welcome back, {user?.name}!
           </h1>
           <p className="text-muted-foreground">
-            Here's an overview of your job applications and notifications.
+            Here's an overview of your job applications.
           </p>
         </div>
 
@@ -82,7 +112,7 @@ const ApplicantDashboard = () => {
             { icon: FileText, label: "Applications", value: applications.length, color: "text-primary" },
             { icon: Clock, label: "Pending", value: applications.filter((a) => a.status === "pending" || a.status === "reviewing").length, color: "text-primary" },
             { icon: CheckCircle, label: "Accepted", value: applications.filter((a) => a.status === "accepted").length, color: "text-success" },
-            { icon: Bell, label: "Notifications", value: unreadNotifications.length, color: "text-primary" },
+            { icon: XCircle, label: "Rejected", value: applications.filter((a) => a.status === "rejected").length, color: "text-destructive" },
           ].map((stat, index) => (
             <div
               key={stat.label}
@@ -103,15 +133,15 @@ const ApplicantDashboard = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">My Applications</h2>
-              <Link to="/jobs" className="text-primary hover:underline flex items-center gap-1 text-sm">
-                Browse Jobs <ArrowRight className="w-4 h-4" />
+              <Link to="/apply" className="text-primary hover:underline flex items-center gap-1 text-sm">
+                Apply for a Job <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
             {applications.length > 0 ? (
               <div className="space-y-4">
                 {applications.map((app, index) => {
-                  const job = getJobById(app.jobId);
+                  const job = getJobById(app.job_id);
                   return (
                     <div
                       key={app.id}
@@ -125,20 +155,20 @@ const ApplicantDashboard = () => {
                             <h3 className="font-semibold">{job?.title || "Unknown Position"}</h3>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">
-                            Applied on {new Date(app.appliedDate).toLocaleDateString()}
+                            Applied on {new Date(app.applied_date).toLocaleDateString()}
                           </p>
                           <div className="flex items-center gap-3">
                             <span className={getStatusBadge(app.status)}>
                               {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              AI Score: <span className="font-medium text-primary">{app.aiScore}%</span>
+                              AI Score: <span className="font-medium text-primary">{app.ai_score}%</span>
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">Resume</div>
-                          <div className="text-sm font-medium">{app.resumeFileName}</div>
+                          <div className="text-sm font-medium">{app.resume_file_name}</div>
                         </div>
                       </div>
                     </div>
@@ -152,14 +182,14 @@ const ApplicantDashboard = () => {
                 <p className="text-muted-foreground mb-4">
                   Start applying for jobs to see your applications here.
                 </p>
-                <Link to="/jobs" className="btn-primary inline-flex items-center gap-2">
-                  Browse Jobs <ArrowRight className="w-4 h-4" />
+                <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+                  Apply for a Job <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Notifications & Profile */}
+          {/* Profile */}
           <div className="space-y-6">
             {/* Profile Card */}
             <div className="glass-card p-6 animate-fade-in-up">
@@ -175,46 +205,32 @@ const ApplicantDashboard = () => {
               </div>
             </div>
 
-            {/* Notifications */}
+            {/* Quick Actions */}
             <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Notifications</h2>
-                {unreadNotifications.length > 0 && (
-                  <span className="badge-primary">{unreadNotifications.length} new</span>
-                )}
+              <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+              <div className="space-y-3">
+                <Link
+                  to="/jobs"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                >
+                  <Briefcase className="w-5 h-5 text-primary" />
+                  <span>Browse Available Jobs</span>
+                </Link>
+                <Link
+                  to="/apply"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                >
+                  <FileText className="w-5 h-5 text-primary" />
+                  <span>Submit New Application</span>
+                </Link>
+                <Link
+                  to="/applicant/applications"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                >
+                  <Bell className="w-5 h-5 text-primary" />
+                  <span>View All Applications</span>
+                </Link>
               </div>
-
-              {userNotifications.length > 0 ? (
-                <div className="space-y-3">
-                  {userNotifications.slice(0, 5).map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 rounded-xl ${!notification.read ? "bg-primary/5" : "bg-secondary/50"}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-2 h-2 rounded-full mt-2 ${
-                            notification.type === "accepted"
-                              ? "bg-success"
-                              : notification.type === "rejected"
-                              ? "bg-destructive"
-                              : "bg-primary"
-                          }`}
-                        />
-                        <div>
-                          <div className="font-medium text-sm">{notification.title}</div>
-                          <div className="text-xs text-muted-foreground">{notification.message}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No notifications yet</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
