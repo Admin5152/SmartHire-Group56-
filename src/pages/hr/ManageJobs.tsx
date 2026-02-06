@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, MapPin, Clock, Users, PlusCircle, ArrowRight, Edit, Trash2, X, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -51,14 +51,22 @@ const ManageJobs = () => {
   const fetchData = async () => {
     try {
       // Fetch jobs created by this HR user
-      const { data: jobsData, error: jobsError } = await api.getMyJobs();
-      if (jobsError) throw new Error(jobsError);
-      setJobs(jobsData?.jobs || []);
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("created_by", user?.id)
+        .order("posted_date", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
 
       // Fetch applications
-      const { data: appsData, error: appsError } = await api.getApplications();
-      if (appsError) throw new Error(appsError);
-      setApplications(appsData?.applications || []);
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("id, job_id, status");
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load jobs");
@@ -90,15 +98,18 @@ const ManageJobs = () => {
     }
 
     try {
-      const { error } = await api.updateJob(jobId, {
-        title: editForm.title,
-        description: editForm.description,
-        department: editForm.department,
-        location: editForm.location,
-        type: editForm.type,
-      });
+      const { error } = await supabase
+        .from("jobs")
+        .update({
+          title: editForm.title,
+          description: editForm.description,
+          department: editForm.department,
+          location: editForm.location,
+          type: editForm.type,
+        })
+        .eq("id", jobId);
 
-      if (error) throw new Error(error);
+      if (error) throw error;
 
       setJobs((prev) =>
         prev.map((job) =>
@@ -118,8 +129,12 @@ const ManageJobs = () => {
     if (!deleteJobId) return;
 
     try {
-      const { error } = await api.deleteJob(deleteJobId);
-      if (error) throw new Error(error);
+      const { error } = await supabase
+        .from("jobs")
+        .delete()
+        .eq("id", deleteJobId);
+
+      if (error) throw error;
 
       setJobs((prev) => prev.filter((job) => job.id !== deleteJobId));
       toast.success("Job deleted successfully!");
@@ -169,7 +184,7 @@ const ManageJobs = () => {
               return (
                 <div
                   key={job.id}
-                  className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg"
+                  className="glass-card p-6 animate-fade-in-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {isEditing ? (
@@ -294,14 +309,14 @@ const ManageJobs = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleStartEdit(job)}
-                            className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-all duration-300 hover:scale-105"
+                            className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                             title="Edit Job"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteJobId(job.id)}
-                            className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all duration-300 hover:scale-105"
+                            className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                             title="Delete Job"
                           >
                             <Trash2 className="w-4 h-4" />

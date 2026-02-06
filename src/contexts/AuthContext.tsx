@@ -1,16 +1,12 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface User {
   id: string;
   email: string;
   name: string;
   role: "applicant" | "hr";
-}
-
-interface Session {
-  access_token: string;
-  refresh_token: string;
 }
 
 interface AuthContextType {
@@ -23,7 +19,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const SESSION_KEY = "smarthire_session";
+// HR Admin credentials
+const HR_ADMIN_EMAIL = "Group56@gmail.com";
+const HR_ADMIN_PASSWORD = "Group56";
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -38,73 +36,127 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const savedSession = localStorage.getItem(SESSION_KEY);
-    if (savedSession) {
-      try {
-        const session: Session = JSON.parse(savedSession);
-        api.setToken(session.access_token);
-        fetchCurrentUser();
-      } catch {
-        localStorage.removeItem(SESSION_KEY);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          await fetchUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
         setIsLoading(false);
       }
-    } else {
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user);
+      }
       setIsLoading(false);
-    }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchCurrentUser = async () => {
+  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
-      const { data, error } = await api.getMe();
-      if (error || !data?.user) {
-        localStorage.removeItem(SESSION_KEY);
-        api.setToken(null);
-        setUser(null);
-      } else {
-        setUser(data.user);
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", supabaseUser.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
       }
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-      api.setToken(null);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+
+      if (profile) {
+        setUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email || "",
+          name: profile.name,
+          role: profile.role as "applicant" | "hr",
+        });
+      }
+    } catch (error) {
+      console.error("Error in fetchUserProfile:", error);
     }
   };
 
   const signIn = async (email: string, password: string, role: "applicant" | "hr") => {
-    const { data, error } = await api.signIn(email, password, role);
-    
+    // Check HR admin credentials
+    if (role === "hr") {
+      if (email !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
+        throw new Error("Invalid HR admin credentials. Access denied.");
+      }
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
     if (error) {
-      throw new Error(error);
+      throw error;
     }
 
-    if (data?.session) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(data.session));
-      api.setToken(data.session.access_token);
-    }
+    if (data.user) {
+      // Verify user role matches requested role
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
 
-    if (data?.user) {
-      setUser(data.user);
+      if (profile && profile.role !== role) {
+        await supabase.auth.signOut();
+        throw new Error(`This account is registered as ${profile.role}, not ${role}.`);
+      }
     }
   };
 
   const signUp = async (email: string, password: string, name: string, role: "applicant" | "hr") => {
-    const { data, error } = await api.signUp(email, password, name, role);
-    
-    if (error) {
-      throw new Error(error);
+    // Only allow HR signup with admin credentials
+    if (role === "hr") {
+      if (email !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
+        throw new Error("HR accounts can only be created with admin credentials.");
+      }
     }
 
-    // After signup, sign in automatically
-    await signIn(email, password, role);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.user) {
+      // Create profile
+      const { error: profileError } = await supabase.from("profiles").insert({
+        user_id: data.user.id,
+        name,
+        role,
+      });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        throw new Error("Failed to create user profile");
+      }
+
+      // Fetch the profile to update local state
+      await fetchUserProfile(data.user);
+    }
   };
 
   const signOut = async () => {
-    await api.signOut();
-    localStorage.removeItem(SESSION_KEY);
-    api.setToken(null);
+    await supabase.auth.signOut();
     setUser(null);
   };
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Users, Briefcase, FileText, TrendingUp, PlusCircle, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Job {
   id: string;
@@ -35,16 +35,22 @@ const HRDashboard = () => {
   const fetchData = async () => {
     try {
       // Fetch jobs
-      const { data: jobsData, error: jobsError } = await api.getMyJobs();
-      if (!jobsError && jobsData) {
-        setJobs(jobsData.jobs || []);
-      }
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("id, title, department")
+        .eq("created_by", user?.id);
 
-      // Fetch ranked applications
-      const { data: appsData, error: appsError } = await api.getRankedApplicants(20);
-      if (!appsError && appsData) {
-        setApplications(appsData.applications || []);
-      }
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Fetch applications
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .order("ai_score", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -80,7 +86,7 @@ const HRDashboard = () => {
               Welcome back, {user?.name}! Here's your hiring overview.
             </p>
           </div>
-          <Link to="/hr/create-job" className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105">
+          <Link to="/hr/create-job" className="btn-primary inline-flex items-center gap-2">
             <PlusCircle className="w-5 h-5" />
             Create New Job
           </Link>
@@ -96,7 +102,7 @@ const HRDashboard = () => {
           ].map((stat, index) => (
             <div
               key={stat.label}
-              className="stat-card animate-fade-in-up transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="stat-card animate-fade-in-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-center justify-between">
@@ -113,7 +119,7 @@ const HRDashboard = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Recent Applications</h2>
-              <Link to="/hr/applicants" className="text-primary hover:underline flex items-center gap-1 text-sm transition-all duration-300">
+              <Link to="/hr/applicants" className="text-primary hover:underline flex items-center gap-1 text-sm">
                 View All <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -125,7 +131,7 @@ const HRDashboard = () => {
                   return (
                     <div
                       key={app.id}
-                      className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
+                      className="glass-card p-6 animate-fade-in-up"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -155,7 +161,7 @@ const HRDashboard = () => {
                           )}
                         </div>
                         <div className="text-right">
-                          <div className={`text-2xl font-bold transition-colors ${
+                          <div className={`text-2xl font-bold ${
                             app.ai_score >= 70 ? "text-success" : app.ai_score >= 50 ? "text-primary" : "text-muted-foreground"
                           }`}>
                             {app.ai_score}%
@@ -181,12 +187,12 @@ const HRDashboard = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Top Candidates */}
-            <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg">
+            <div className="glass-card p-6 animate-fade-in-up">
               <h2 className="text-lg font-semibold mb-4">Top Candidates</h2>
               {topCandidates.length > 0 ? (
                 <div className="space-y-3">
                   {topCandidates.map((candidate, index) => (
-                    <div key={candidate.id} className="flex items-center gap-3 transition-all duration-300 hover:bg-secondary/50 p-2 rounded-lg -mx-2">
+                    <div key={candidate.id} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
                         {index + 1}
                       </div>
@@ -208,10 +214,10 @@ const HRDashboard = () => {
             </div>
 
             {/* Open Positions */}
-            <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "100ms" }}>
+            <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">My Open Positions</h2>
-                <Link to="/hr/jobs" className="text-primary text-sm hover:underline transition-colors">
+                <Link to="/hr/jobs" className="text-primary text-sm hover:underline">
                   Manage
                 </Link>
               </div>
@@ -220,7 +226,7 @@ const HRDashboard = () => {
                   {jobs.slice(0, 4).map((job) => {
                     const appCount = applications.filter((a) => a.job_id === job.id).length;
                     return (
-                      <div key={job.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50 transition-all duration-300">
+                      <div key={job.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
                         <div>
                           <div className="font-medium text-sm">{job.title}</div>
                           <div className="text-xs text-muted-foreground">{job.department}</div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Upload, FileText, CheckCircle, Loader2, AlertCircle, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Job {
@@ -52,14 +52,22 @@ const ApplyJob = () => {
 
     try {
       // Fetch jobs
-      const { data: jobsData, error: jobsError } = await api.getJobs();
-      if (jobsError) throw new Error(jobsError);
-      setJobs(jobsData?.jobs || []);
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("*")
+        .order("posted_date", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
 
       // Fetch existing applications
-      const { data: appsData, error: appsError } = await api.getMyApplications();
-      if (appsError) throw new Error(appsError);
-      setExistingApplications(appsData?.applications?.map((a: any) => a.job_id) || []);
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("job_id")
+        .eq("applicant_id", user.id);
+
+      if (appsError) throw appsError;
+      setExistingApplications(appsData?.map((a) => a.job_id) || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load jobs");
@@ -87,19 +95,21 @@ const ApplyJob = () => {
   const analyzeResume = async (file: File, techStack: string[]) => {
     const fileBase64 = await fileToBase64(file);
     
-    const { data, error } = await api.analyzeResume(
-      fileBase64,
-      file.type,
-      file.name,
-      techStack
-    );
+    const { data, error } = await supabase.functions.invoke('analyze-resume', {
+      body: {
+        fileBase64,
+        fileType: file.type,
+        fileName: file.name,
+        techStack,
+      },
+    });
 
     if (error) {
-      throw new Error(error);
+      throw new Error(error.message || 'Failed to analyze resume');
     }
 
-    if (!data?.success) {
-      throw new Error('Resume analysis failed');
+    if (!data.success) {
+      throw new Error(data.error || 'Resume analysis failed');
     }
 
     return {
@@ -169,19 +179,24 @@ const ApplyJob = () => {
         const techStackArray = customTechStack.split(",").map((s) => s.trim()).filter(Boolean);
         techStackToAnalyze = techStackArray;
 
-        const { data: newJobData, error: jobError } = await api.createJob({
-          title: customJobTitle,
-          description: customJobDescription,
-          department: customJobDepartment,
-          location: customJobLocation || "Remote",
-          type: customJobType,
-          tech_stack: techStackArray,
-          requirements: techStackArray,
-          is_external: true,
-        });
+        const { data: newJob, error: jobError } = await supabase
+          .from("jobs")
+          .insert({
+            title: customJobTitle,
+            description: customJobDescription,
+            department: customJobDepartment,
+            location: customJobLocation || "Remote",
+            type: customJobType,
+            tech_stack: techStackArray,
+            requirements: techStackArray,
+            created_by: user!.id,
+            is_external: true,
+          })
+          .select()
+          .single();
 
-        if (jobError) throw new Error(jobError);
-        jobIdToApply = newJobData?.job?.id;
+        if (jobError) throw jobError;
+        jobIdToApply = newJob.id;
       } else {
         techStackToAnalyze = job?.tech_stack || [];
       }
@@ -195,17 +210,19 @@ const ApplyJob = () => {
       setIsAnalyzing(false);
 
       // Create application
-      const { error: appError } = await api.createApplication({
+      const { error: appError } = await supabase.from("applications").insert({
         job_id: jobIdToApply,
+        applicant_id: user!.id,
         applicant_name: name,
         applicant_email: user!.email,
         resume_file_name: file.name,
         resume_text: extractedText,
         ai_score: score,
         matched_skills: matchedSkills,
+        status: "pending",
       });
 
-      if (appError) throw new Error(appError);
+      if (appError) throw appError;
 
       toast.success("Application submitted successfully!");
       navigate("/applicant/applications");
@@ -251,7 +268,7 @@ const ApplyJob = () => {
           {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-300 mb-8"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -265,7 +282,7 @@ const ApplyJob = () => {
               <button
                 type="button"
                 onClick={() => setIsCustomJob(false)}
-                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                className={`px-4 py-2 rounded-lg transition-colors ${
                   !isCustomJob
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -276,7 +293,7 @@ const ApplyJob = () => {
               <button
                 type="button"
                 onClick={() => setIsCustomJob(true)}
-                className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                   isCustomJob
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -295,7 +312,7 @@ const ApplyJob = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="input-field transition-all duration-300 focus:scale-[1.01]"
+                  className="input-field"
                   placeholder="Your full name"
                 />
               </div>
@@ -323,7 +340,7 @@ const ApplyJob = () => {
                       type="text"
                       value={customJobTitle}
                       onChange={(e) => setCustomJobTitle(e.target.value)}
-                      className="input-field transition-all duration-300 focus:scale-[1.01]"
+                      className="input-field"
                       placeholder="e.g., Frontend Developer"
                     />
                   </div>
@@ -334,7 +351,7 @@ const ApplyJob = () => {
                     <textarea
                       value={customJobDescription}
                       onChange={(e) => setCustomJobDescription(e.target.value)}
-                      className="input-field min-h-[100px] transition-all duration-300 focus:scale-[1.01]"
+                      className="input-field min-h-[100px]"
                       placeholder="Describe the role you're applying for..."
                     />
                   </div>
@@ -346,7 +363,7 @@ const ApplyJob = () => {
                       type="text"
                       value={customJobDepartment}
                       onChange={(e) => setCustomJobDepartment(e.target.value)}
-                      className="input-field transition-all duration-300 focus:scale-[1.01]"
+                      className="input-field"
                       placeholder="e.g., Engineering"
                     />
                   </div>
@@ -358,7 +375,7 @@ const ApplyJob = () => {
                       type="text"
                       value={customJobLocation}
                       onChange={(e) => setCustomJobLocation(e.target.value)}
-                      className="input-field transition-all duration-300 focus:scale-[1.01]"
+                      className="input-field"
                       placeholder="e.g., Remote, Accra"
                     />
                   </div>
@@ -369,7 +386,7 @@ const ApplyJob = () => {
                     <select
                       value={customJobType}
                       onChange={(e) => setCustomJobType(e.target.value)}
-                      className="input-field transition-all duration-300"
+                      className="input-field"
                     >
                       <option value="Full-time">Full-time</option>
                       <option value="Part-time">Part-time</option>
@@ -385,7 +402,7 @@ const ApplyJob = () => {
                       type="text"
                       value={customTechStack}
                       onChange={(e) => setCustomTechStack(e.target.value)}
-                      className="input-field transition-all duration-300 focus:scale-[1.01]"
+                      className="input-field"
                       placeholder="e.g., React, TypeScript, Node.js"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -407,7 +424,7 @@ const ApplyJob = () => {
                     <select
                       value={selectedJobId}
                       onChange={(e) => setSelectedJobId(e.target.value)}
-                      className="input-field transition-all duration-300"
+                      className="input-field"
                     >
                       <option value="">Select a position</option>
                       {jobs.filter(j => !j.is_external).map((j) => (
@@ -420,7 +437,7 @@ const ApplyJob = () => {
 
                   {/* Selected Job Info */}
                   {job && (
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 animate-fade-in">
+                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
                       <h3 className="font-semibold mb-2">{job.title}</h3>
                       <p className="text-sm text-muted-foreground mb-3">{job.description.slice(0, 150)}...</p>
                       <div className="flex flex-wrap gap-2">
@@ -444,7 +461,7 @@ const ApplyJob = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Resume</label>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                     file ? "border-success bg-success/5" : "border-border hover:border-primary"
                   }`}
                 >
@@ -467,9 +484,9 @@ const ApplyJob = () => {
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="w-12 h-12 text-muted-foreground" />
-                        <span className="font-medium">Click to upload resume</span>
+                        <span className="font-medium">Upload your resume</span>
                         <span className="text-sm text-muted-foreground">
-                          PDF, DOC, DOCX, PNG, or JPG (max 10MB)
+                          PDF, DOC, or image files, max 10MB
                         </span>
                       </div>
                     )}
@@ -477,22 +494,34 @@ const ApplyJob = () => {
                 </div>
               </div>
 
-              {/* OCR Error */}
+              {/* OCR Error Display */}
               {ocrError && (
-                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3 animate-fade-in">
-                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-destructive">Resume Analysis Failed</p>
-                    <p className="text-sm text-destructive/80">{ocrError}</p>
+                    <h4 className="font-medium text-sm text-destructive">Resume Analysis Failed</h4>
+                    <p className="text-xs text-destructive/80">{ocrError}</p>
                   </div>
                 </div>
               )}
 
-              {/* Submit */}
+              {/* AI Analysis Info */}
+              <div className="p-4 rounded-xl bg-secondary/50 flex items-start gap-3">
+                <FileText className="w-5 h-5 text-primary mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-sm">AI-Powered OCR Analysis</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Your resume will be scanned using OCR technology to extract text, then analyzed 
+                    against the job requirements to match your skills with the position.
+                  </p>
+                </div>
+              </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting || (!isCustomJob && hasApplied)}
-                className="btn-primary w-full flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -500,16 +529,9 @@ const ApplyJob = () => {
                     {isAnalyzing ? "Analyzing Resume..." : "Submitting..."}
                   </>
                 ) : (
-                  <>
-                    <FileText className="w-5 h-5" />
-                    Submit Application
-                  </>
+                  "Submit Application"
                 )}
               </button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Your resume will be analyzed using AI to match your skills with job requirements.
-              </p>
             </form>
           </div>
         </div>
