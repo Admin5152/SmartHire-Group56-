@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { MapPin, Clock, ArrowLeft, ArrowRight, CheckCircle, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 
 interface Job {
   id: string;
@@ -31,14 +31,9 @@ const JobDetails = () => {
 
   const fetchJob = async () => {
     try {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      setJob(data);
+      const { data, error } = await api.getJob(id!);
+      if (error) throw new Error(error);
+      setJob(data?.job || null);
     } catch (error) {
       console.error("Error fetching job:", error);
     } finally {
@@ -63,7 +58,7 @@ const JobDetails = () => {
           <p className="text-muted-foreground mb-6">
             The position you're looking for doesn't exist or has been removed.
           </p>
-          <Link to="/jobs" className="btn-primary inline-flex items-center gap-2">
+          <Link to="/jobs" className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105">
             <ArrowLeft className="w-4 h-4" />
             Back to Jobs
           </Link>
@@ -79,14 +74,14 @@ const JobDetails = () => {
           {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-300 mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Jobs
           </button>
 
           {/* Job Header */}
-          <div className="glass-card p-8 mb-8 animate-fade-in-up">
+          <div className="glass-card p-8 mb-8 animate-fade-in-up transition-all duration-300 hover:shadow-lg">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{job.type}</span>
               <span className="text-sm text-muted-foreground">{job.department}</span>
@@ -108,7 +103,7 @@ const JobDetails = () => {
             {user?.role === "applicant" ? (
               <Link
                 to={`/apply/${job.id}`}
-                className="btn-primary inline-flex items-center gap-2"
+                className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105"
               >
                 Apply for this Position
                 <ArrowRight className="w-5 h-5" />
@@ -116,7 +111,7 @@ const JobDetails = () => {
             ) : !user ? (
               <Link
                 to="/signin"
-                className="btn-primary inline-flex items-center gap-2"
+                className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105"
               >
                 Sign In to Apply
                 <ArrowRight className="w-5 h-5" />
@@ -127,13 +122,13 @@ const JobDetails = () => {
           {/* Job Description */}
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-8">
-              <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              <div className="glass-card p-8 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "100ms" }}>
                 <h2 className="text-xl font-semibold mb-4">About this Role</h2>
                 <p className="text-muted-foreground leading-relaxed">{job.description}</p>
               </div>
 
               {job.requirements && job.requirements.length > 0 && (
-                <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+                <div className="glass-card p-8 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "200ms" }}>
                   <h2 className="text-xl font-semibold mb-4">Requirements</h2>
                   <ul className="space-y-3">
                     {job.requirements.map((req, index) => (
@@ -149,7 +144,7 @@ const JobDetails = () => {
 
             <div className="space-y-8">
               {job.tech_stack && job.tech_stack.length > 0 && (
-                <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "300ms" }}>
+                <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "300ms" }}>
                   <h2 className="text-lg font-semibold mb-4">Tech Stack</h2>
                   <div className="flex flex-wrap gap-2">
                     {job.tech_stack.map((tech) => (
@@ -164,7 +159,7 @@ const JobDetails = () => {
                 </div>
               )}
 
-              <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
+              <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "400ms" }}>
                 <h2 className="text-lg font-semibold mb-4">Quick Info</h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Clock, ArrowRight, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 
 interface Job {
   id: string;
@@ -27,14 +27,11 @@ const Jobs = () => {
 
   const fetchJobs = async () => {
     try {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("is_external", false)
-        .order("posted_date", { ascending: false });
-
-      if (error) throw error;
-      setJobs(data || []);
+      const { data, error } = await api.getJobs();
+      if (error) throw new Error(error);
+      // Filter out external jobs
+      const internalJobs = (data?.jobs || []).filter((j: Job) => !j.is_external);
+      setJobs(internalJobs);
     } catch (error) {
       console.error("Error fetching jobs:", error);
     } finally {
@@ -67,7 +64,7 @@ const Jobs = () => {
             {jobs.map((job, index) => (
               <div
                 key={job.id}
-                className="glass-card-hover p-6 md:p-8 animate-fade-in-up"
+                className="glass-card-hover p-6 md:p-8 animate-fade-in-up transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -117,14 +114,14 @@ const Jobs = () => {
                   <div className="flex flex-col gap-3 md:ml-6">
                     <Link
                       to={`/jobs/${job.id}`}
-                      className="btn-secondary text-center whitespace-nowrap"
+                      className="btn-secondary text-center whitespace-nowrap transition-all duration-300 hover:scale-105"
                     >
                       View Details
                     </Link>
                     {user?.role === "applicant" ? (
                       <Link
                         to={`/apply/${job.id}`}
-                        className="btn-primary text-center whitespace-nowrap inline-flex items-center justify-center gap-2"
+                        className="btn-primary text-center whitespace-nowrap inline-flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                       >
                         Apply Now
                         <ArrowRight className="w-4 h-4" />
@@ -132,7 +129,7 @@ const Jobs = () => {
                     ) : !user ? (
                       <Link
                         to="/signin"
-                        className="btn-primary text-center whitespace-nowrap inline-flex items-center justify-center gap-2"
+                        className="btn-primary text-center whitespace-nowrap inline-flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                       >
                         Sign In to Apply
                         <ArrowRight className="w-4 h-4" />
