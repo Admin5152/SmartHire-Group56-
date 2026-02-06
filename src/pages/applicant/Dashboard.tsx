@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Briefcase, FileText, User, ArrowRight, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 
 interface Application {
   id: string;
@@ -38,22 +38,16 @@ const ApplicantDashboard = () => {
 
     try {
       // Fetch applications
-      const { data: appsData, error: appsError } = await supabase
-        .from("applications")
-        .select("*")
-        .eq("applicant_id", user.id)
-        .order("applied_date", { ascending: false });
-
-      if (appsError) throw appsError;
-      setApplications(appsData || []);
+      const { data: appsData, error: appsError } = await api.getMyApplications();
+      if (!appsError && appsData) {
+        setApplications(appsData.applications || []);
+      }
 
       // Fetch jobs for application titles
-      const { data: jobsData, error: jobsError } = await supabase
-        .from("jobs")
-        .select("id, title");
-
-      if (jobsError) throw jobsError;
-      setJobs(jobsData || []);
+      const { data: jobsData, error: jobsError } = await api.getJobs();
+      if (!jobsError && jobsData) {
+        setJobs(jobsData.jobs || []);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -116,7 +110,7 @@ const ApplicantDashboard = () => {
           ].map((stat, index) => (
             <div
               key={stat.label}
-              className="stat-card animate-fade-in-up"
+              className="stat-card animate-fade-in-up transition-all duration-300 hover:scale-105 hover:shadow-lg"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-center justify-between">
@@ -133,7 +127,7 @@ const ApplicantDashboard = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">My Applications</h2>
-              <Link to="/apply" className="text-primary hover:underline flex items-center gap-1 text-sm">
+              <Link to="/apply" className="text-primary hover:underline flex items-center gap-1 text-sm transition-all duration-300">
                 Apply for a Job <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -145,7 +139,7 @@ const ApplicantDashboard = () => {
                   return (
                     <div
                       key={app.id}
-                      className="glass-card p-6 animate-fade-in-up"
+                      className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -182,7 +176,7 @@ const ApplicantDashboard = () => {
                 <p className="text-muted-foreground mb-4">
                   Start applying for jobs to see your applications here.
                 </p>
-                <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+                <Link to="/apply" className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105">
                   Apply for a Job <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -192,7 +186,7 @@ const ApplicantDashboard = () => {
           {/* Profile */}
           <div className="space-y-6">
             {/* Profile Card */}
-            <div className="glass-card p-6 animate-fade-in-up">
+            <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg">
               <h2 className="text-lg font-semibold mb-4">Profile</h2>
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -206,26 +200,26 @@ const ApplicantDashboard = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="glass-card p-6 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+            <div className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg" style={{ animationDelay: "100ms" }}>
               <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
               <div className="space-y-3">
                 <Link
                   to="/jobs"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300"
                 >
                   <Briefcase className="w-5 h-5 text-primary" />
                   <span>Browse Available Jobs</span>
                 </Link>
                 <Link
                   to="/apply"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300"
                 >
                   <FileText className="w-5 h-5 text-primary" />
                   <span>Submit New Application</span>
                 </Link>
                 <Link
                   to="/applicant/applications"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300"
                 >
                   <Bell className="w-5 h-5 text-primary" />
                   <span>View All Applications</span>

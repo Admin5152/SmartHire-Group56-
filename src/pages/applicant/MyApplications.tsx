@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Clock, CheckCircle, XCircle, ArrowRight, Briefcase, PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 
 interface Application {
   id: string;
@@ -43,23 +43,16 @@ const MyApplications = () => {
 
     try {
       // Fetch applications
-      const { data: appsData, error: appsError } = await supabase
-        .from("applications")
-        .select("*")
-        .eq("applicant_id", user.id)
-        .order("applied_date", { ascending: false });
-
-      if (appsError) throw appsError;
-      setApplications(appsData || []);
+      const { data: appsData, error: appsError } = await api.getMyApplications();
+      if (!appsError && appsData) {
+        setApplications(appsData.applications || []);
+      }
 
       // Fetch jobs
-      const { data: jobsData, error: jobsError } = await supabase
-        .from("jobs")
-        .select("*")
-        .order("posted_date", { ascending: false });
-
-      if (jobsError) throw jobsError;
-      setJobs(jobsData || []);
+      const { data: jobsData, error: jobsError } = await api.getJobs();
+      if (!jobsError && jobsData) {
+        setJobs(jobsData.jobs || []);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -113,7 +106,7 @@ const MyApplications = () => {
                 Track the status of all your job applications.
               </p>
             </div>
-            <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+            <Link to="/apply" className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <PlusCircle className="w-5 h-5" />
               Apply for a Job
             </Link>
@@ -129,7 +122,7 @@ const MyApplications = () => {
                   return (
                     <div
                       key={app.id}
-                      className="glass-card p-6 animate-fade-in-up"
+                      className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -192,7 +185,7 @@ const MyApplications = () => {
                 {availableJobs.map((job, index) => (
                   <div
                     key={job.id}
-                    className="glass-card p-6 animate-fade-in-up"
+                    className="glass-card p-6 animate-fade-in-up transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
                     style={{ animationDelay: `${(applications.length + index) * 100}ms` }}
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -219,13 +212,13 @@ const MyApplications = () => {
                       <div className="flex items-center gap-2">
                         <Link
                           to={`/jobs/${job.id}`}
-                          className="btn-secondary"
+                          className="btn-secondary transition-all duration-300 hover:scale-105"
                         >
                           View Details
                         </Link>
                         <Link
                           to={`/apply/${job.id}`}
-                          className="btn-primary inline-flex items-center gap-2"
+                          className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105"
                         >
                           Apply
                           <ArrowRight className="w-4 h-4" />
@@ -246,7 +239,7 @@ const MyApplications = () => {
               <p className="text-muted-foreground mb-6">
                 Start exploring open positions and apply for your dream job.
               </p>
-              <Link to="/apply" className="btn-primary inline-flex items-center gap-2">
+              <Link to="/apply" className="btn-primary inline-flex items-center gap-2 transition-all duration-300 hover:scale-105">
                 Apply for a Job
                 <ArrowRight className="w-4 h-4" />
               </Link>

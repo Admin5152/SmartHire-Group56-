@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, CheckCircle, XCircle, ChevronDown, FileText, Briefcase, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { toast } from "sonner";
 
 interface Application {
@@ -48,21 +48,16 @@ const Applicants = () => {
     setIsLoading(true);
     try {
       // Fetch jobs
-      const { data: jobsData, error: jobsError } = await supabase
-        .from("jobs")
-        .select("*");
-
-      if (jobsError) throw jobsError;
-      setJobs(jobsData || []);
+      const { data: jobsData, error: jobsError } = await api.getJobs();
+      if (jobsError) throw new Error(jobsError);
+      setJobs(jobsData?.jobs || []);
 
       // Fetch applications
-      const { data: appsData, error: appsError } = await supabase
-        .from("applications")
-        .select("*")
-        .order("ai_score", { ascending: false });
-
-      if (appsError) throw appsError;
-      setApplications(appsData || []);
+      const { data: appsData, error: appsError } = await api.getApplications();
+      if (appsError) throw new Error(appsError);
+      // Sort by AI score descending
+      const sorted = (appsData?.applications || []).sort((a: Application, b: Application) => b.ai_score - a.ai_score);
+      setApplications(sorted);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data");
@@ -96,12 +91,8 @@ const Applicants = () => {
 
   const handleAccept = async (application: Application) => {
     try {
-      const { error } = await supabase
-        .from("applications")
-        .update({ status: "accepted" })
-        .eq("id", application.id);
-
-      if (error) throw error;
+      const { error } = await api.updateApplicationStatus(application.id, "accepted");
+      if (error) throw new Error(error);
 
       setApplications((prev) =>
         prev.map((app) =>
@@ -117,12 +108,8 @@ const Applicants = () => {
 
   const handleReject = async (application: Application) => {
     try {
-      const { error } = await supabase
-        .from("applications")
-        .update({ status: "rejected" })
-        .eq("id", application.id);
-
-      if (error) throw error;
+      const { error } = await api.updateApplicationStatus(application.id, "rejected");
+      if (error) throw new Error(error);
 
       setApplications((prev) =>
         prev.map((app) =>
@@ -184,7 +171,7 @@ const Applicants = () => {
                 setViewMode("my");
                 setFilterJob("");
               }}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                 viewMode === "my"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -197,7 +184,7 @@ const Applicants = () => {
                 setViewMode("others");
                 setFilterJob("");
               }}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                 viewMode === "others"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -259,7 +246,7 @@ const Applicants = () => {
                 return (
                   <div
                     key={app.id}
-                    className="glass-card overflow-hidden animate-fade-in-up"
+                    className="glass-card overflow-hidden animate-fade-in-up transition-all duration-300 hover:shadow-lg"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Main Row */}
@@ -287,14 +274,14 @@ const Applicants = () => {
                         </div>
 
                         {/* Score */}
-                        <div className={`px-4 py-2 rounded-xl ${getScoreColor(app.ai_score)}`}>
+                        <div className={`px-4 py-2 rounded-xl transition-all duration-300 ${getScoreColor(app.ai_score)}`}>
                           <div className="text-2xl font-bold">{app.ai_score}%</div>
                           <div className="text-xs">AI Score</div>
                         </div>
 
                         {/* Status */}
                         <div className="flex items-center gap-3">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
                             app.status === "accepted" 
                               ? "bg-success/10 text-success" 
                               : app.status === "rejected" 
@@ -311,14 +298,14 @@ const Applicants = () => {
                             <>
                               <button
                                 onClick={() => handleAccept(app)}
-                                className="p-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors"
+                                className="p-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-all duration-300 hover:scale-105"
                                 title="Accept"
                               >
                                 <CheckCircle className="w-5 h-5" />
                               </button>
                               <button
                                 onClick={() => handleReject(app)}
-                                className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                                className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all duration-300 hover:scale-105"
                                 title="Reject"
                               >
                                 <XCircle className="w-5 h-5" />
@@ -327,10 +314,10 @@ const Applicants = () => {
                           )}
                           <button
                             onClick={() => setExpandedId(isExpanded ? null : app.id)}
-                            className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                            className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-all duration-300"
                             title="View Details"
                           >
-                            <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
                           </button>
                         </div>
                       </div>
@@ -414,19 +401,17 @@ const Applicants = () => {
               {viewMode === "others" ? (
                 <>
                   <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Applications from Other Jobs</h3>
+                  <h3 className="text-lg font-semibold mb-2">No External Applications</h3>
                   <p className="text-muted-foreground">
-                    Applications for external jobs or jobs created by other HR users will appear here.
+                    Applications from other sources will appear here.
                   </p>
                 </>
               ) : (
                 <>
-                  <Filter className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Applicants Found</h3>
+                  <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Applications Yet</h3>
                   <p className="text-muted-foreground">
-                    {searchTerm || filterJob || filterStatus
-                      ? "Try adjusting your filters"
-                      : "Applications will appear here as candidates apply"}
+                    Applications for your job postings will appear here.
                   </p>
                 </>
               )}

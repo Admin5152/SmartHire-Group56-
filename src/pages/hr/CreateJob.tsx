@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { toast } from "sonner";
 
 const CreateJob = () => {
@@ -53,7 +53,7 @@ const CreateJob = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("jobs").insert({
+      const { error } = await api.createJob({
         title,
         description,
         department,
@@ -61,11 +61,10 @@ const CreateJob = () => {
         type,
         tech_stack: techStack,
         requirements: requirements.length > 0 ? requirements : ["No specific requirements listed"],
-        created_by: user?.id,
         is_external: false,
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error);
 
       toast.success("Job created successfully!");
       navigate("/hr/jobs");
@@ -84,7 +83,7 @@ const CreateJob = () => {
           {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-300 mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -101,7 +100,7 @@ const CreateJob = () => {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="input-field"
+                  className="input-field transition-all duration-300 focus:scale-[1.01]"
                   placeholder="e.g., Senior Frontend Developer"
                 />
               </div>
@@ -112,7 +111,7 @@ const CreateJob = () => {
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="input-field min-h-[120px]"
+                  className="input-field min-h-[120px] transition-all duration-300 focus:scale-[1.01]"
                   placeholder="Describe the role, responsibilities, and what makes it exciting..."
                 />
               </div>
@@ -125,7 +124,7 @@ const CreateJob = () => {
                     type="text"
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="input-field"
+                    className="input-field transition-all duration-300 focus:scale-[1.01]"
                     placeholder="e.g., Engineering"
                   />
                 </div>
@@ -135,7 +134,7 @@ const CreateJob = () => {
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="input-field"
+                    className="input-field transition-all duration-300 focus:scale-[1.01]"
                     placeholder="e.g., Remote / Accra"
                   />
                 </div>
@@ -147,7 +146,7 @@ const CreateJob = () => {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="input-field"
+                  className="input-field transition-all duration-300"
                 >
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
@@ -165,13 +164,13 @@ const CreateJob = () => {
                     value={techInput}
                     onChange={(e) => setTechInput(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTech())}
-                    className="input-field flex-1"
+                    className="input-field flex-1 transition-all duration-300 focus:scale-[1.01]"
                     placeholder="e.g., React, TypeScript..."
                   />
                   <button
                     type="button"
                     onClick={handleAddTech}
-                    className="btn-secondary px-4"
+                    className="btn-secondary px-4 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -180,13 +179,13 @@ const CreateJob = () => {
                   {techStack.map((tech) => (
                     <span
                       key={tech}
-                      className="px-3 py-1 bg-primary/10 text-primary rounded-lg flex items-center gap-2"
+                      className="px-3 py-1 bg-primary/10 text-primary rounded-lg flex items-center gap-2 animate-fade-in"
                     >
                       {tech}
                       <button
                         type="button"
                         onClick={() => handleRemoveTech(tech)}
-                        className="hover:text-destructive"
+                        className="hover:text-destructive transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -204,13 +203,13 @@ const CreateJob = () => {
                     value={reqInput}
                     onChange={(e) => setReqInput(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRequirement())}
-                    className="input-field flex-1"
+                    className="input-field flex-1 transition-all duration-300 focus:scale-[1.01]"
                     placeholder="e.g., 3+ years of experience..."
                   />
                   <button
                     type="button"
                     onClick={handleAddRequirement}
-                    className="btn-secondary px-4"
+                    className="btn-secondary px-4 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -219,13 +218,13 @@ const CreateJob = () => {
                   {requirements.map((req, index) => (
                     <div
                       key={index}
-                      className="p-3 bg-secondary/50 rounded-lg flex items-start justify-between gap-3"
+                      className="p-3 bg-secondary/50 rounded-lg flex items-start justify-between gap-3 animate-fade-in"
                     >
                       <span className="text-sm">{req}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveRequirement(req)}
-                        className="text-muted-foreground hover:text-destructive"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -238,7 +237,7 @@ const CreateJob = () => {
               <div className="flex gap-4">
                 <button 
                   type="submit" 
-                  className="btn-primary flex-1"
+                  className="btn-primary flex-1 transition-all duration-300 hover:scale-[1.02]"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Creating..." : "Create Job"}
@@ -246,7 +245,7 @@ const CreateJob = () => {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="btn-secondary"
+                  className="btn-secondary transition-all duration-300 hover:scale-105"
                 >
                   Cancel
                 </button>
