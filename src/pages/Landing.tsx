@@ -174,7 +174,7 @@ const Landing = () => {
             {[
               { value: "50+", label: "Companies" },
               { value: "1000+", label: "Jobs Posted" },
-              { value: "5000+", label: "Applicants" },
+              { value: "1000+", label: "Applicants" },
               { value: "98%", label: "Satisfaction" },
             ].map((stat, index) => (
               <div
@@ -477,7 +477,7 @@ const Landing = () => {
                 <div>
                   <p className="font-semibold text-sm">Phone</p>
                   <a href="tel:+233241234567" className="text-muted-foreground hover:text-primary transition-colors">
-                    +233 24 123 4567
+                    +233 53 177 1042
                   </a>
                 </div>
               </div>

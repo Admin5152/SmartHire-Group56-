@@ -67,14 +67,14 @@ const SignIn = () => {
           
           <div className="space-y-6">
             <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-              Find the right<br />talent, faster.
+              Find the right Job <br />That fits you.
             </h2>
             <p className="text-white/70 text-lg max-w-md">
               AI-powered resume screening that helps you make smarter hiring decisions.
             </p>
             <div className="flex gap-8 text-white/60">
               <div>
-                <div className="text-3xl font-bold text-white">5000+</div>
+                <div className="text-3xl font-bold text-white">1000+</div>
                 <div className="text-sm">Applicants</div>
               </div>
               <div>
@@ -241,3 +241,8 @@ const SignIn = () => {
 };
 
 export default SignIn;
+
+
+
+//sign in:Group56@gmail.com
+//password:Group56
