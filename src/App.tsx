@@ -30,9 +30,17 @@ import CreateJob from "./pages/hr/CreateJob";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
+// Protected Route Component - waits for auth to load
 const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; allowedRole: "applicant" | "hr" }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/signin" replace />;
@@ -58,120 +66,26 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Routes - Landing has no sidebar for full-width hero */}
+      {/* Public Routes */}
       <Route path="/" element={<Landing />} />
-      <Route
-        path="/jobs"
-        element={
-          <LayoutWrapper>
-            <Jobs />
-          </LayoutWrapper>
-        }
-      />
-      <Route
-        path="/jobs/:id"
-        element={
-          <LayoutWrapper>
-            <JobDetails />
-          </LayoutWrapper>
-        }
-      />
-      <Route
-        path="/about"
-        element={
-          <LayoutWrapper>
-            <About />
-          </LayoutWrapper>
-        }
-      />
+      <Route path="/jobs" element={<LayoutWrapper><Jobs /></LayoutWrapper>} />
+      <Route path="/jobs/:id" element={<LayoutWrapper><JobDetails /></LayoutWrapper>} />
+      <Route path="/about" element={<LayoutWrapper><About /></LayoutWrapper>} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
 
       {/* Applicant Routes */}
-      <Route
-        path="/applicant/dashboard"
-        element={
-          <ProtectedRoute allowedRole="applicant">
-            <LayoutWrapper>
-              <ApplicantDashboard />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/apply/:jobId?"
-        element={
-          <ProtectedRoute allowedRole="applicant">
-            <LayoutWrapper>
-              <ApplyJob />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/applicant/applications"
-        element={
-          <ProtectedRoute allowedRole="applicant">
-            <LayoutWrapper>
-              <MyApplications />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/applicant/notifications"
-        element={
-          <ProtectedRoute allowedRole="applicant">
-            <LayoutWrapper>
-              <Notifications />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/applicant/dashboard" element={<ProtectedRoute allowedRole="applicant"><LayoutWrapper><ApplicantDashboard /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/apply/:jobId?" element={<ProtectedRoute allowedRole="applicant"><LayoutWrapper><ApplyJob /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/applicant/applications" element={<ProtectedRoute allowedRole="applicant"><LayoutWrapper><MyApplications /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/applicant/notifications" element={<ProtectedRoute allowedRole="applicant"><LayoutWrapper><Notifications /></LayoutWrapper></ProtectedRoute>} />
 
       {/* HR Routes */}
-      <Route
-        path="/hr/dashboard"
-        element={
-          <ProtectedRoute allowedRole="hr">
-            <LayoutWrapper>
-              <HRDashboard />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr/applicants"
-        element={
-          <ProtectedRoute allowedRole="hr">
-            <LayoutWrapper>
-              <Applicants />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr/jobs"
-        element={
-          <ProtectedRoute allowedRole="hr">
-            <LayoutWrapper>
-              <ManageJobs />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr/create-job"
-        element={
-          <ProtectedRoute allowedRole="hr">
-            <LayoutWrapper>
-              <CreateJob />
-            </LayoutWrapper>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/hr/dashboard" element={<ProtectedRoute allowedRole="hr"><LayoutWrapper><HRDashboard /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/hr/applicants" element={<ProtectedRoute allowedRole="hr"><LayoutWrapper><Applicants /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/hr/jobs" element={<ProtectedRoute allowedRole="hr"><LayoutWrapper><ManageJobs /></LayoutWrapper></ProtectedRoute>} />
+      <Route path="/hr/create-job" element={<ProtectedRoute allowedRole="hr"><LayoutWrapper><CreateJob /></LayoutWrapper></ProtectedRoute>} />
 
-      {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

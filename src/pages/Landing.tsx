@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Users, Rocket, Target, Heart, Briefcase, ChevronRight, Phone, Award, Globe, Zap, Shield, Mail, MapPin } from "lucide-react";
-import { useJobs } from "@/contexts/JobsContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
