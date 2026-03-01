@@ -94,20 +94,20 @@ const ApplicantDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="mb-8 animate-fade-in-up">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+        <div className="mb-6 md:mb-8 animate-fade-in-up">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">
             Welcome back, {user?.name}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground">
             Here's an overview of your job applications.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
           {[
             { icon: FileText, label: "Applications", value: applications.length, color: "text-primary" },
             { icon: Clock, label: "Pending", value: applications.filter((a) => a.status === "pending" || a.status === "reviewing").length, color: "text-primary" },
@@ -120,15 +120,15 @@ const ApplicantDashboard = () => {
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-center justify-between">
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                <span className="text-3xl font-bold">{stat.value}</span>
+                <stat.icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
+                <span className="text-2xl md:text-3xl font-bold">{stat.value}</span>
               </div>
-              <span className="text-muted-foreground">{stat.label}</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
             </div>
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
           {/* Applications */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
@@ -145,7 +145,7 @@ const ApplicantDashboard = () => {
                   return (
                     <div
                       key={app.id}
-                      className="glass-card p-6 animate-fade-in-up"
+                      className="glass-card p-4 md:p-6 animate-fade-in-up"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start justify-between gap-4">

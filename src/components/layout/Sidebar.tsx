@@ -58,7 +58,7 @@ const Sidebar = ({ userRole, onSignOut }: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-border shadow-glass z-50 transition-all duration-300 flex flex-col",
+        "fixed left-0 top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-border shadow-glass z-50 transition-all duration-300 flex-col hidden md:flex",
         collapsed ? "w-20" : "w-64"
       )}
     >
