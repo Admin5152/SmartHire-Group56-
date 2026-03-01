@@ -76,24 +76,24 @@ const HRDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in-up">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mb-6 md:mb-8 animate-fade-in-up">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">HR Dashboard</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">HR Dashboard</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Welcome back, {user?.name}! Here's your hiring overview.
             </p>
           </div>
-          <Link to="/hr/create-job" className="btn-primary inline-flex items-center gap-2">
-            <PlusCircle className="w-5 h-5" />
+          <Link to="/hr/create-job" className="btn-primary inline-flex items-center gap-2 text-sm md:text-base self-start">
+            <PlusCircle className="w-4 h-4 md:w-5 md:h-5" />
             Create New Job
           </Link>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
           {[
             { icon: Briefcase, label: "My Jobs", value: jobs.length, color: "text-primary" },
             { icon: Users, label: "Total Applicants", value: applications.length, color: "text-primary" },
@@ -106,15 +106,15 @@ const HRDashboard = () => {
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-center justify-between">
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                <span className="text-3xl font-bold">{stat.value}</span>
+                <stat.icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
+                <span className="text-2xl md:text-3xl font-bold">{stat.value}</span>
               </div>
-              <span className="text-muted-foreground">{stat.label}</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{stat.label}</span>
             </div>
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
           {/* Recent Applications */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ const HRDashboard = () => {
                   return (
                     <div
                       key={app.id}
-                      className="glass-card p-6 animate-fade-in-up"
+                      className="glass-card p-4 md:p-6 animate-fade-in-up"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start justify-between gap-4">

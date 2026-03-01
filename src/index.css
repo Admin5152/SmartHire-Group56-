@@ -181,7 +181,38 @@
   }
 
   .stat-card {
-    @apply glass-card p-6 flex flex-col gap-2;
+    @apply glass-card p-6 md:p-6 flex flex-col gap-2;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    .stat-card {
+      @apply p-4 gap-1.5;
+    }
+
+    .stat-card .text-3xl {
+      @apply text-2xl;
+    }
+
+    .stat-card .w-8 {
+      @apply w-6 h-6;
+    }
+
+    .glass-card {
+      @apply rounded-xl;
+    }
+
+    .section-title {
+      @apply text-2xl;
+    }
+
+    .section-subtitle {
+      @apply text-base;
+    }
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .notification-card {
