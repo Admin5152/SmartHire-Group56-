@@ -34,7 +34,7 @@ const SignUp = () => {
     try {
       await signUp(email, password, name, role);
       toast.success("Account created successfully! Please check your email to verify.");
-      navigate(role === "applicant" ? "/applicant/dashboard" : "/hr/dashboard");
+      navigate("/signin");
     } catch (error: any) {
       toast.error(error.message || "Failed to create account. Please try again.");
     } finally {
@@ -43,73 +43,79 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden">
-      {/* Abstract Wave Background */}
-      <div className="absolute inset-0 -z-10">
-        {/* Top wave */}
-        <svg className="absolute top-0 left-0 w-full h-auto" viewBox="0 0 1440 400" preserveAspectRatio="none">
-          <path
-            fill="#0A2463"
-            d="M0,192L48,186.7C96,181,192,171,288,165.3C384,160,480,160,576,176C672,192,768,224,864,218.7C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          />
-          <path
-            fill="#1E3A8A"
-            fillOpacity="0.8"
-            d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,144C672,139,768,149,864,165.3C960,181,1056,203,1152,197.3C1248,192,1344,160,1392,144L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          />
-          <path
-            fill="#3B82F6"
-            fillOpacity="0.6"
-            d="M0,64L48,69.3C96,75,192,85,288,101.3C384,117,480,139,576,138.7C672,139,768,117,864,112C960,107,1056,117,1152,128C1248,139,1344,149,1392,154.7L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          />
+    <div className="min-h-screen flex">
+      {/* Left Panel - Abstract Art */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2463] via-[#1E3A8A] to-[#3B82F6]" />
+        
+        {/* Floating shapes */}
+        <div className="absolute top-[20%] right-[15%] w-80 h-80 rounded-full bg-[#8B5CF6]/25 blur-3xl animate-blob" />
+        <div className="absolute bottom-[15%] left-[10%] w-72 h-72 rounded-full bg-[#06B6D4]/20 blur-3xl animate-blob" style={{ animationDelay: "3s" }} />
+        <div className="absolute top-[40%] left-[30%] w-56 h-56 rounded-full bg-[#EC4899]/15 blur-3xl animate-blob" style={{ animationDelay: "5s" }} />
+        
+        {/* Geometric shapes */}
+        <div className="absolute top-[20%] left-[25%] w-28 h-28 border-2 border-white/10 rounded-full animate-float" />
+        <div className="absolute bottom-[25%] right-[15%] w-36 h-36 border-2 border-white/10 rounded-2xl rotate-45 animate-float" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-[65%] left-[15%] w-20 h-20 bg-white/5 rounded-xl rotate-12 animate-float" style={{ animationDelay: "4s" }} />
+        
+        {/* Diagonal lines */}
+        <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+          <line x1="100%" y1="100%" x2="0" y2="0" stroke="white" strokeWidth="0.5" />
+          <line x1="80%" y1="100%" x2="0" y2="20%" stroke="white" strokeWidth="0.5" />
+          <line x1="100%" y1="80%" x2="20%" y2="0" stroke="white" strokeWidth="0.5" />
         </svg>
-
-        {/* Bottom wave */}
-        <svg className="absolute bottom-0 left-0 w-full h-auto" viewBox="0 0 1440 400" preserveAspectRatio="none">
-          <path
-            fill="#0A2463"
-            d="M0,224L48,213.3C96,203,192,181,288,186.7C384,192,480,224,576,224C672,224,768,192,864,165.3C960,139,1056,117,1152,122.7C1248,128,1344,160,1392,176L1440,192L1440,400L1392,400C1344,400,1248,400,1152,400C1056,400,960,400,864,400C768,400,672,400,576,400C480,400,384,400,288,400C192,400,96,400,48,400L0,400Z"
-          />
-          <path
-            fill="#1E3A8A"
-            fillOpacity="0.8"
-            d="M0,288L48,293.3C96,299,192,309,288,298.7C384,288,480,256,576,250.7C672,245,768,267,864,272C960,277,1056,267,1152,250.7C1248,235,1344,213,1392,202.7L1440,192L1440,400L1392,400C1344,400,1248,400,1152,400C1056,400,960,400,864,400C768,400,672,400,576,400C480,400,384,400,288,400C192,400,96,400,48,400L0,400Z"
-          />
-          <path
-            fill="#3B82F6"
-            fillOpacity="0.6"
-            d="M0,320L48,314.7C96,309,192,299,288,304C384,309,480,331,576,325.3C672,320,768,288,864,277.3C960,267,1056,277,1152,282.7C1248,288,1344,288,1392,288L1440,288L1440,400L1392,400C1344,400,1248,400,1152,400C1056,400,960,400,864,400C768,400,672,400,576,400C480,400,384,400,288,400C192,400,96,400,48,400L0,400Z"
-          />
-        </svg>
-
-        {/* Floating abstract shapes */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute bottom-20 left-1/4 w-64 h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
-        <div className="absolute bottom-40 right-1/3 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-blob animation-delay-6000" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-2xl font-bold text-white">S</span>
+            </div>
+            <span className="text-2xl font-bold text-white">SmartHire</span>
+          </Link>
+          
+          <div className="space-y-6">
+            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+              Start your<br />journey today.
+            </h2>
+            <p className="text-white/70 text-lg max-w-md">
+              Join thousands of professionals who trust SmartHire for their career growth.
+            </p>
+          </div>
+          
+          <p className="text-white/40 text-sm">
+            © 2026 SmartHire. Born at KNUST.
+          </p>
+        </div>
       </div>
 
-      <div className="w-full max-w-md animate-fade-in-up relative z-10">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Home</span>
-        </button>
+      {/* Right Panel - Sign Up Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background overflow-y-auto">
+        <div className="w-full max-w-md">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </button>
 
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
-              <span className="text-2xl font-bold text-primary-foreground">S</span>
-            </div>
-          </Link>
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-white/80">Join SmartHire and start your journey</p>
-        </div>
+          {/* Mobile Logo */}
+          <div className="lg:hidden mb-8">
+            <Link to="/" className="inline-flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <span className="text-xl font-bold text-primary-foreground">S</span>
+              </div>
+              <span className="text-xl font-bold">SmartHire</span>
+            </Link>
+          </div>
 
-        <div className="glass-card p-8 backdrop-blur-xl bg-white/90 border border-white/20 shadow-2xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
+            <p className="text-muted-foreground">Join SmartHire and start your journey</p>
+          </div>
+
           {/* Role Selector */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
@@ -157,7 +163,7 @@ const SignUp = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="input-field pl-12 bg-white/50 backdrop-blur-sm"
+                  className="input-field pl-12"
                   placeholder="John Doe"
                 />
               </div>
@@ -171,7 +177,7 @@ const SignUp = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-field pl-12 bg-white/50 backdrop-blur-sm"
+                  className="input-field pl-12"
                   placeholder="you@example.com"
                 />
               </div>
@@ -185,7 +191,7 @@ const SignUp = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-12 pr-12 bg-white/50 backdrop-blur-sm"
+                  className="input-field pl-12 pr-12"
                   placeholder="••••••••"
                 />
                 <button
@@ -206,7 +212,7 @@ const SignUp = () => {
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input-field pl-12 bg-white/50 backdrop-blur-sm"
+                  className="input-field pl-12"
                   placeholder="••••••••"
                 />
               </div>
@@ -215,7 +221,7 @@ const SignUp = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
@@ -241,35 +247,17 @@ const SignUp = () => {
 
       <style>{`
         @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          25% {
-            transform: translate(20px, -50px) scale(1.1);
-          }
-          50% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          75% {
-            transform: translate(50px, 50px) scale(1.05);
-          }
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(20px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(50px, 50px) scale(1.05); }
         }
-
-        .animate-blob {
-          animation: blob 20s infinite;
+        .animate-blob { animation: blob 20s infinite; }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(12deg); }
+          50% { transform: translateY(-20px) rotate(12deg); }
         }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        .animation-delay-6000 {
-          animation-delay: 6s;
-        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
       `}</style>
     </div>
   );
