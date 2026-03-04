@@ -96,7 +96,7 @@ const Landing = () => {
           <div className="space-y-8">
             <div className="space-y-3">
               <h1 
-                className="text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight animate-[fade-in_1.2s_ease-out_forwards] opacity-0"
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight animate-[fade-in_1.2s_ease-out_forwards] opacity-0"
                 style={{ 
                   animationDelay: "0.3s",
                   fontFamily: "'Playfair Display', 'Georgia', serif",
@@ -106,7 +106,7 @@ const Landing = () => {
                 Welcome
               </h1>
               <p 
-                className="text-2xl md:text-3xl lg:text-4xl font-light text-white/95 animate-[fade-in_1.2s_ease-out_forwards] opacity-0 tracking-wide"
+                className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-light text-white/95 animate-[fade-in_1.2s_ease-out_forwards] opacity-0 tracking-wide"
                 style={{ 
                   animationDelay: "0.8s",
                   fontFamily: "'Inter', sans-serif",
@@ -124,14 +124,14 @@ const Landing = () => {
             >
               <a 
                 href="#jobs" 
-                className="bg-white text-primary font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:-translate-y-1 inline-flex items-center gap-2 text-lg group"
+                className="bg-white text-primary font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:-translate-y-1 inline-flex items-center gap-2 text-base sm:text-lg group"
               >
                 View Available Jobs
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </a>
               <Link 
                 to="/signin" 
-                className="bg-white/20 text-white font-semibold px-8 py-4 rounded-xl border-2 border-white/40 backdrop-blur-md transition-all duration-300 hover:bg-white/30 hover:border-white/60 inline-flex items-center gap-2 text-lg group"
+                className="bg-white/20 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl border-2 border-white/40 backdrop-blur-md transition-all duration-300 hover:bg-white/30 hover:border-white/60 inline-flex items-center gap-2 text-base sm:text-lg group"
               >
                 Sign In to Apply
                 <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
@@ -154,10 +154,10 @@ const Landing = () => {
       {/* About Section */}
       <section className="py-12 sm:py-16 md:py-24 bg-white">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="max-w-4xl mx-auto text-center mb-16 animate-fade-in-up">
-            <h2 className="section-title mb-6">About SmartHire</h2>
-            <div className="prose prose-lg text-muted-foreground text-left max-w-3xl mx-auto">
-              <p className="mb-4 text-lg">
+            <div className="max-w-4xl mx-auto text-center mb-8 md:mb-16 animate-fade-in-up">
+            <h2 className="section-title mb-4 md:mb-6">About SmartHire</h2>
+            <div className="prose prose-base md:prose-lg text-muted-foreground text-left max-w-3xl mx-auto">
+              <p className="mb-4 text-base md:text-lg">
                 SmartHire started as a simple idea during our time as students at KNUST (Kwame Nkrumah University of Science and Technology). What began as a group project for our software engineering class has grown into something we never imagined.
               </p>
               <p className="mb-4">
@@ -170,7 +170,7 @@ const Landing = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 max-w-4xl mx-auto mb-8 md:mb-16">
             {[
               { value: "50+", label: "Companies" },
               { value: "1000+", label: "Jobs Posted" },
@@ -179,11 +179,11 @@ const Landing = () => {
             ].map((stat, index) => (
               <div
                 key={stat.label}
-                className="glass-card p-6 text-center animate-fade-in-up"
+                className="glass-card p-4 md:p-6 text-center animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
+                <div className="text-2xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
+                <div className="text-xs md:text-base text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -193,25 +193,25 @@ const Landing = () => {
       {/* Values Section */}
       <section className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-background to-primary/5">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="section-title mb-4">Our Values</h2>
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="section-title mb-3 md:mb-4">Our Values</h2>
             <p className="section-subtitle mx-auto">
               The principles that guide everything we do
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 max-w-6xl mx-auto">
             {values.map((value, index) => (
               <div
                 key={value.title}
-                className="glass-card-hover p-8 animate-fade-in-up"
+                className="glass-card-hover p-4 md:p-8 animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <value.icon className="w-7 h-7 text-primary" />
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center mb-3 md:mb-6">
+                  <value.icon className="w-5 h-5 md:w-7 md:h-7 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{value.title}</h3>
-                <p className="text-muted-foreground">{value.description}</p>
+                <h3 className="text-base md:text-xl font-semibold mb-1 md:mb-3">{value.title}</h3>
+                <p className="text-xs md:text-base text-muted-foreground">{value.description}</p>
               </div>
             ))}
           </div>
@@ -221,23 +221,23 @@ const Landing = () => {
       {/* Benefits Section */}
       <section className="py-12 sm:py-16 md:py-24 bg-white">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="section-title mb-4">Why Join Us</h2>
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="section-title mb-3 md:mb-4">Why Join Us</h2>
             <p className="section-subtitle mx-auto">
               We invest in our people and their future
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 max-w-4xl mx-auto">
             {benefits.map((benefit, index) => (
               <div
                 key={benefit.title}
-                className="glass-card-hover p-6 animate-fade-in-up"
+                className="glass-card-hover p-4 md:p-6 animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 md:mb-4">
+                  <benefit.icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2">{benefit.title}</h3>
+                <h3 className="text-sm md:text-base font-semibold mb-1 md:mb-2">{benefit.title}</h3>
                 <p className="text-sm text-muted-foreground">{benefit.description}</p>
               </div>
             ))}
@@ -249,7 +249,7 @@ const Landing = () => {
       <section className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-background to-primary/5">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
               <div>
                 <h2 className="section-title mb-6">What We Expect</h2>
                 <p className="text-muted-foreground text-lg mb-8">
@@ -291,9 +291,9 @@ const Landing = () => {
       {/* Jobs Section */}
       <section id="jobs" className="py-12 sm:py-16 md:py-24 bg-white scroll-mt-4">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="section-title mb-6">We offer</h2>
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="section-title mb-4 md:mb-6">We offer</h2>
+            <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 mb-6 md:mb-8">
               {[
                 "Software Engineer",
                 "Product Manager",
@@ -310,7 +310,7 @@ const Landing = () => {
               ].map((role) => (
                 <span
                   key={role}
-                  className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20"
+                  className="px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-medium border border-primary/20"
                 >
                   {role}
                 </span>
@@ -410,23 +410,23 @@ const Landing = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
         
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-primary-foreground mb-4 md:mb-6">
             Ready to Build the Future?
           </h2>
-          <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
+          <p className="text-base md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-6 md:mb-8">
             Take the first step towards an exciting career at SmartHire. We can't wait to meet you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#jobs"
-              className="bg-white text-primary font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 inline-flex items-center gap-2"
+              <a
+                href="#jobs"
+                className="bg-white text-primary font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 inline-flex items-center gap-2 text-sm sm:text-base"
             >
               View Available Jobs
               <ArrowRight className="w-5 h-5" />
             </a>
-            <Link
-              to="/signup"
-              className="bg-white/20 text-primary-foreground font-semibold px-8 py-4 rounded-xl border border-white/30 transition-all duration-300 hover:bg-white/30 inline-flex items-center gap-2"
+              <Link
+                to="/signup"
+                className="bg-white/20 text-primary-foreground font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl border border-white/30 transition-all duration-300 hover:bg-white/30 inline-flex items-center gap-2 text-sm sm:text-base"
             >
               Create Account
               <ChevronRight className="w-5 h-5" />
@@ -506,7 +506,7 @@ const Landing = () => {
         
         <button
           onClick={() => setShowContact(!showContact)}
-          className="bg-primary text-primary-foreground w-16 h-16 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center group hover:shadow-primary/50"
+          className="bg-primary text-primary-foreground w-12 h-12 md:w-16 md:h-16 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center group hover:shadow-primary/50"
           aria-label="Contact us"
         >
           {showContact ? (

@@ -262,8 +262,8 @@ const ApplyJob = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
           {/* Back Button */}
           <button
@@ -274,8 +274,8 @@ const ApplyJob = () => {
             Back
           </button>
 
-          <div className="glass-card p-8 animate-fade-in-up">
-            <h1 className="text-2xl font-bold mb-6">Apply for Position</h1>
+          <div className="glass-card p-4 md:p-8 animate-fade-in-up">
+            <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Apply for Position</h1>
 
             {/* Toggle between existing job and custom job */}
             <div className="glass-card p-2 mb-6 inline-flex">

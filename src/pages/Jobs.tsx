@@ -51,11 +51,11 @@ const Jobs = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="text-center mb-12 animate-fade-in-up">
-          <h1 className="section-title mb-4">Available Positions</h1>
+        <div className="text-center mb-6 md:mb-12 animate-fade-in-up">
+          <h1 className="section-title mb-2 md:mb-4">Available Positions</h1>
           <p className="section-subtitle mx-auto">
             Discover your next opportunity at SmartHire. We're always looking for talented individuals to join our team.
           </p>
@@ -67,7 +67,7 @@ const Jobs = () => {
             {jobs.map((job, index) => (
               <div
                 key={job.id}
-                className="glass-card-hover p-6 md:p-8 animate-fade-in-up"
+                className="glass-card-hover p-4 md:p-8 animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -77,7 +77,7 @@ const Jobs = () => {
                       <span className="text-sm text-muted-foreground">{job.department}</span>
                     </div>
                     
-                    <h2 className="text-2xl font-bold text-foreground mb-3">{job.title}</h2>
+                    <h2 className="text-lg md:text-2xl font-bold text-foreground mb-2 md:mb-3">{job.title}</h2>
                     
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                       <span className="flex items-center gap-1">
