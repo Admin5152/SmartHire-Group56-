@@ -73,8 +73,8 @@ const JobDetails = () => {
   }
 
   return (
-    <div className="min-h-screen py-6 md:py-12">
-      <div className="container mx-auto px-4 md:px-6">
+    <div className="min-h-screen py-12">
+      <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <button
@@ -86,13 +86,13 @@ const JobDetails = () => {
           </button>
 
           {/* Job Header */}
-          <div className="glass-card p-4 md:p-8 mb-6 md:mb-8 animate-fade-in-up">
+          <div className="glass-card p-8 mb-8 animate-fade-in-up">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{job.type}</span>
               <span className="text-sm text-muted-foreground">{job.department}</span>
             </div>
 
-            <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-3 md:mb-4">{job.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{job.title}</h1>
 
             <div className="flex flex-wrap items-center gap-6 text-muted-foreground mb-6">
               <span className="flex items-center gap-2">
@@ -127,14 +127,14 @@ const JobDetails = () => {
           {/* Job Description */}
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-8">
-              <div className="glass-card p-4 md:p-8 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-                <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">About this Role</h2>
+              <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+                <h2 className="text-xl font-semibold mb-4">About this Role</h2>
                 <p className="text-muted-foreground leading-relaxed">{job.description}</p>
               </div>
 
               {job.requirements && job.requirements.length > 0 && (
-                <div className="glass-card p-4 md:p-8 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-                  <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Requirements</h2>
+                <div className="glass-card p-8 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+                  <h2 className="text-xl font-semibold mb-4">Requirements</h2>
                   <ul className="space-y-3">
                     {job.requirements.map((req, index) => (
                       <li key={index} className="flex items-start gap-3">
