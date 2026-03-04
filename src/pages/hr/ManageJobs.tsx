@@ -155,13 +155,13 @@ const ManageJobs = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in-up">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Manage Jobs</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Manage Jobs</h1>
               <p className="text-muted-foreground">
                 View and manage your job postings.
               </p>
@@ -184,7 +184,7 @@ const ManageJobs = () => {
               return (
                 <div
                   key={job.id}
-                  className="glass-card p-6 animate-fade-in-up"
+                  className="glass-card p-4 md:p-6 animate-fade-in-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {isEditing ? (

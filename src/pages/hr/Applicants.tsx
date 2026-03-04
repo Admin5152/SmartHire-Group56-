@@ -166,12 +166,12 @@ const Applicants = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold text-foreground mb-2">All Applicants</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">All Applicants</h1>
             <p className="text-muted-foreground">
               Review and manage job applications. Candidates are ranked by AI score.
             </p>
@@ -263,8 +263,8 @@ const Applicants = () => {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Main Row */}
-                    <div className="p-6">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    <div className="p-4 md:p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-3 md:gap-4">
                         {/* Rank & Avatar */}
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">

@@ -22,12 +22,12 @@ const Notifications = () => {
   };
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Notifications</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Notifications</h1>
             <p className="text-muted-foreground">
               Stay updated on your application status and company news.
             </p>

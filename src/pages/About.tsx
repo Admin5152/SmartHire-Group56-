@@ -12,18 +12,18 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-6">
+    <div className="min-h-screen py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-6">
         {/* Hero */}
-        <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="section-title mb-4">About SmartHire</h1>
+        <div className="text-center mb-8 md:mb-16 animate-fade-in-up">
+          <h1 className="section-title mb-2 md:mb-4">About SmartHire</h1>
           <p className="section-subtitle mx-auto">
             We're revolutionizing the hiring process with AI-powered solutions.
           </p>
         </div>
 
         {/* Story */}
-        <div className="glass-card p-8 md:p-12 max-w-4xl mx-auto mb-16 animate-fade-in-up">
+        <div className="glass-card p-5 md:p-12 max-w-4xl mx-auto mb-8 md:mb-16 animate-fade-in-up">
           <h2 className="text-2xl font-bold mb-6">Our Story</h2>
           <div className="prose prose-lg text-muted-foreground">
             <p className="mb-4">
@@ -50,13 +50,13 @@ const About = () => {
         </div>
 
         {/* Benefits */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Why Join Companies Using SmartHire</h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="mb-8 md:mb-16">
+          <h2 className="text-xl md:text-2xl font-bold text-center mb-6 md:mb-8">Why Join Companies Using SmartHire</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 max-w-4xl mx-auto">
             {benefits.map((benefit, index) => (
               <div
                 key={benefit.title}
-                className="glass-card-hover p-6 animate-fade-in-up"
+                className="glass-card-hover p-4 md:p-6 animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
