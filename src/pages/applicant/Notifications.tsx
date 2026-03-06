@@ -1,25 +1,111 @@
-import { Bell, CheckCircle, XCircle, Info, Megaphone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, CheckCircle, XCircle, Clock, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJobs } from "@/contexts/JobsContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Application {
+  id: string;
+  job_id: string;
+  status: string;
+  ai_score: number;
+  applied_date: string;
+  updated_at: string;
+}
+
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+}
 
 const Notifications = () => {
   const { user } = useAuth();
-  const { notifications, markNotificationRead } = useJobs();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const userNotifications = notifications.filter((n) => n.userId === user?.id);
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
+  const fetchData = async () => {
+    if (!user) return;
+
+    try {
+      const { data: appsData, error: appsError } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("applicant_id", user.id)
+        .order("updated_at", { ascending: false });
+
+      if (appsError) throw appsError;
+      setApplications(appsData || []);
+
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("jobs")
+        .select("id, title, department");
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getJobTitle = (jobId: string) =>
+    jobs.find((j) => j.id === jobId)?.title || "Unknown Position";
+
+  const getNotificationIcon = (status: string) => {
+    switch (status) {
       case "accepted":
         return <CheckCircle className="w-6 h-6 text-success" />;
       case "rejected":
         return <XCircle className="w-6 h-6 text-destructive" />;
-      case "news":
-        return <Megaphone className="w-6 h-6 text-primary" />;
+      case "reviewing":
+        return <FileText className="w-6 h-6 text-primary" />;
       default:
-        return <Info className="w-6 h-6 text-primary" />;
+        return <Clock className="w-6 h-6 text-muted-foreground" />;
     }
   };
+
+  const getNotificationMessage = (app: Application) => {
+    const jobTitle = getJobTitle(app.job_id);
+    switch (app.status) {
+      case "accepted":
+        return `Congratulations! 🎉 Your application for "${jobTitle}" has been accepted.`;
+      case "rejected":
+        return `Your application for "${jobTitle}" was not selected. Keep trying!`;
+      case "reviewing":
+        return `Your application for "${jobTitle}" is currently being reviewed.`;
+      default:
+        return `Your application for "${jobTitle}" has been received and is pending review.`;
+    }
+  };
+
+  const getNotificationTitle = (status: string) => {
+    switch (status) {
+      case "accepted":
+        return "Application Accepted";
+      case "rejected":
+        return "Application Update";
+      case "reviewing":
+        return "Under Review";
+      default:
+        return "Application Submitted";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
@@ -29,38 +115,42 @@ const Notifications = () => {
           <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold text-foreground mb-2">Notifications</h1>
             <p className="text-muted-foreground">
-              Stay updated on your application status and company news.
+              Stay updated on your application status.
             </p>
           </div>
 
-          {userNotifications.length > 0 ? (
+          {applications.length > 0 ? (
             <div className="space-y-4">
-              {userNotifications.map((notification, index) => (
+              {applications.map((app, index) => (
                 <div
-                  key={notification.id}
-                  onClick={() => markNotificationRead(notification.id)}
-                  className={`notification-card cursor-pointer animate-fade-in-up ${
-                    !notification.read ? "ring-2 ring-primary/20" : ""
-                  }`}
+                  key={app.id}
+                  className="glass-card p-4 md:p-6 flex items-start gap-4 animate-fade-in-up"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="flex-shrink-0">
-                    {getNotificationIcon(notification.type)}
+                  <div className="flex-shrink-0 mt-1">
+                    {getNotificationIcon(app.status)}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold mb-1">{notification.title}</h3>
-                        <p className="text-muted-foreground text-sm">{notification.message}</p>
+                        <h3 className="font-semibold mb-1">{getNotificationTitle(app.status)}</h3>
+                        <p className="text-muted-foreground text-sm">{getNotificationMessage(app)}</p>
                       </div>
-                      {!notification.read && (
-                        <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                      )}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                        app.status === "accepted"
+                          ? "bg-success/10 text-success"
+                          : app.status === "rejected"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-primary/10 text-primary"
+                      }`}>
+                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(notification.createdAt).toLocaleDateString()} at{" "}
-                      {new Date(notification.createdAt).toLocaleTimeString()}
-                    </p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span>AI Score: {app.ai_score}%</span>
+                      <span>•</span>
+                      <span>{new Date(app.updated_at).toLocaleDateString()} at {new Date(app.updated_at).toLocaleTimeString()}</span>
+                    </div>
                   </div>
                 </div>
               ))}
