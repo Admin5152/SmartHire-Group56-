@@ -1,6 +1,5 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
-import MobileBottomNav from "./MobileBottomNav";
 import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
@@ -16,13 +15,11 @@ const MainLayout = ({ children, userRole, onSignOut }: MainLayoutProps) => {
       <main
         className={cn(
           "transition-all duration-300 min-h-screen",
-          "ml-0 md:ml-64", // No margin on mobile, sidebar margin on desktop
-          "pb-20 md:pb-0" // Bottom padding for mobile nav
+          "ml-20 md:ml-64" // Adjust based on sidebar state
         )}
       >
         {children}
       </main>
-      <MobileBottomNav userRole={userRole} />
     </div>
   );
 };
