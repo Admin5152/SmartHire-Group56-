@@ -33,8 +33,8 @@ const SignUp = () => {
     setIsLoading(true);
     try {
       await signUp(email, password, name, role);
-      toast.success("Account created successfully! Please check your email to verify.");
-      navigate("/signin");
+      toast.success("Account created successfully!");
+      navigate(role === "applicant" ? "/applicant/dashboard" : "/hr/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to create account. Please try again.");
     } finally {
