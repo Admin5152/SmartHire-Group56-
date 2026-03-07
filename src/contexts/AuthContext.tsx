@@ -20,8 +20,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // HR Admin credentials
-const HR_ADMIN_EMAIL = "Group56@gmail.com";
+const HR_ADMIN_EMAIL = "group56@gmail.com";
 const HR_ADMIN_PASSWORD = "Group56";
+
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -35,66 +37,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await fetchUserProfile(session.user);
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", supabaseUser.id)
-        .maybeSingle();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("name, role")
+      .eq("user_id", supabaseUser.id)
+      .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching profile:", error);
+    if (error) {
+      throw error;
+    }
+
+    if (!profile) {
+      throw new Error("Profile not found for this account.");
+    }
+
+    setUser({
+      id: supabaseUser.id,
+      email: supabaseUser.email || "",
+      name: profile.name,
+      role: profile.role as "applicant" | "hr",
+    });
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateFromSession = async (sessionUser: SupabaseUser | null) => {
+      if (!isMounted) return;
+
+      if (!sessionUser) {
+        setUser(null);
+        setIsLoading(false);
         return;
       }
 
-      if (profile) {
-        setUser({
-          id: supabaseUser.id,
-          email: supabaseUser.email || "",
-          name: profile.name,
-          role: profile.role as "applicant" | "hr",
-        });
+      setIsLoading(true);
+      try {
+        await fetchUserProfile(sessionUser);
+      } catch (error) {
+        console.error("Error hydrating user profile:", error);
+        setUser(null);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Error in fetchUserProfile:", error);
-    }
-  };
+    };
+
+    // Listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      void hydrateFromSession(session?.user ?? null);
+    });
+
+    // Then restore existing session
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      void hydrateFromSession(session?.user ?? null);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string, role: "applicant" | "hr") => {
+    const normalizedEmail = normalizeEmail(email);
+
     // Check HR admin credentials
     if (role === "hr") {
-      if (email !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
+      if (normalizedEmail !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
         throw new Error("Invalid HR admin credentials. Access denied.");
       }
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
 
@@ -102,31 +120,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
 
-    if (data.user) {
-      // Verify user role matches requested role
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
+    if (!data.user) {
+      throw new Error("Failed to sign in. Please try again.");
+    }
 
-      if (profile && profile.role !== role) {
-        await supabase.auth.signOut();
-        throw new Error(`This account is registered as ${profile.role}, not ${role}.`);
-      }
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      await supabase.auth.signOut();
+      throw new Error("Unable to load account profile. Please try again.");
+    }
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      throw new Error("Account profile missing. Please sign up again.");
+    }
+
+    if (profile.role !== role) {
+      await supabase.auth.signOut();
+      throw new Error(`This account is registered as ${profile.role}, not ${role}.`);
     }
   };
 
   const signUp = async (email: string, password: string, name: string, role: "applicant" | "hr") => {
+    const normalizedEmail = normalizeEmail(email);
+
     // Only allow HR signup with admin credentials
     if (role === "hr") {
-      if (email !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
+      if (normalizedEmail !== HR_ADMIN_EMAIL || password !== HR_ADMIN_PASSWORD) {
         throw new Error("HR accounts can only be created with admin credentials.");
       }
     }
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: window.location.origin,
@@ -137,22 +168,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
 
-    if (data.user) {
-      // Create profile
-      const { error: profileError } = await supabase.from("profiles").insert({
-        user_id: data.user.id,
-        name,
-        role,
-      });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        throw new Error("Failed to create user profile");
-      }
-
-      // Fetch the profile to update local state
-      await fetchUserProfile(data.user);
+    if (!data.user) {
+      throw new Error("Failed to create account");
     }
+
+    const { error: profileError } = await supabase.from("profiles").insert({
+      user_id: data.user.id,
+      name,
+      role,
+    });
+
+    if (profileError) {
+      console.error("Error creating profile:", profileError);
+      throw new Error("Failed to create user profile");
+    }
+
+    await fetchUserProfile(data.user);
   };
 
   const signOut = async () => {
