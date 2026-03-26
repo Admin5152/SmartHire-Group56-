@@ -135,8 +135,8 @@ const ApplyJob = () => {
         return;
       }
       // Increased file size limit to 10MB
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
+      if (selectedFile.size > 50 * 1024 * 1024) {
+        toast.error("File size must be less than 50MB");
         return;
       }
       setFile(selectedFile);
@@ -486,7 +486,7 @@ const ApplyJob = () => {
                         <Upload className="w-12 h-12 text-muted-foreground" />
                         <span className="font-medium">Upload your resume</span>
                         <span className="text-sm text-muted-foreground">
-                          PDF, DOC, or image files, max 10MB
+                          PDF, DOC, or image files, max 50MB
                         </span>
                       </div>
                     )}
