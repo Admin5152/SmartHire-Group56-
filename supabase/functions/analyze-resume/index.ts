@@ -41,6 +41,10 @@ serve(async (req) => {
 
     console.log('Calling Lovable AI for resume text extraction...');
 
+    // For PDFs, convert to image first won't work. Use the data URL approach with Gemini.
+    // Gemini supports PDFs via the image_url field with data URIs.
+    const dataUrl = `data:${mimeType};base64,${fileBase64}`;
+    
     // Use Gemini via Lovable AI Gateway to extract text from the resume
     const extractionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -56,18 +60,18 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Extract ALL text from this resume document. Return ONLY the raw text content, preserving the structure (headings, bullet points, sections). Do not add any commentary or formatting beyond what is in the document.',
+                text: 'Extract ALL text from this resume/CV document. Return ONLY the raw text content, preserving the structure (headings, bullet points, sections). Do not add any commentary, analysis, or formatting beyond what is in the document. If you cannot read the document, return whatever text you can extract.',
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:${mimeType};base64,${fileBase64}`,
+                  url: dataUrl,
                 },
               },
             ],
           },
         ],
-        max_tokens: 4000,
+        max_tokens: 8000,
       }),
     });
 
