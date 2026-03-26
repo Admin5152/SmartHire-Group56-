@@ -23,6 +23,8 @@ export type Database = {
           applied_date: string
           created_at: string
           id: string
+          interview_date: string | null
+          interview_time: string | null
           job_id: string
           matched_skills: string[] | null
           resume_file_name: string
@@ -38,6 +40,8 @@ export type Database = {
           applied_date?: string
           created_at?: string
           id?: string
+          interview_date?: string | null
+          interview_time?: string | null
           job_id: string
           matched_skills?: string[] | null
           resume_file_name: string
@@ -53,6 +57,8 @@ export type Database = {
           applied_date?: string
           created_at?: string
           id?: string
+          interview_date?: string | null
+          interview_time?: string | null
           job_id?: string
           matched_skills?: string[] | null
           resume_file_name?: string
@@ -115,6 +121,36 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
