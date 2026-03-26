@@ -479,6 +479,48 @@ const Applicants = () => {
           )}
         </div>
       </div>
+
+      {/* Interview Scheduling Dialog */}
+      <Dialog open={interviewDialogOpen} onOpenChange={setInterviewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-primary" />
+              Schedule Interview
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Set the date and time for <span className="font-semibold text-foreground">{selectedApp?.applicant_name}</span>'s in-person interview.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="interview-date">Interview Date</Label>
+              <Input
+                id="interview-date"
+                type="date"
+                value={interviewDate}
+                onChange={(e) => setInterviewDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="interview-time">Interview Time</Label>
+              <Input
+                id="interview-time"
+                type="time"
+                value={interviewTime}
+                onChange={(e) => setInterviewTime(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInterviewDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAcceptWithInterview} className="bg-success hover:bg-success/90 text-success-foreground">
+              Accept & Send Interview Details
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
