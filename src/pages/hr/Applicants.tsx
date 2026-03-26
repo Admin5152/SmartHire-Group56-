@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, CheckCircle, XCircle, ChevronDown, FileText, Briefcase, Star } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, ChevronDown, FileText, Briefcase, Star, CalendarIcon, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Application {
   id: string;
@@ -37,6 +41,10 @@ const Applicants = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"my" | "others">("my");
+  const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewTime, setInterviewTime] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -94,21 +102,49 @@ const Applicants = () => {
   // Get jobs for filter dropdown based on view mode
   const filterJobOptions = viewMode === "my" ? myJobs : otherJobs;
 
-  const handleAccept = async (application: Application) => {
+  const openInterviewDialog = (application: Application) => {
+    setSelectedApp(application);
+    setInterviewDate("");
+    setInterviewTime("");
+    setInterviewDialogOpen(true);
+  };
+
+  const handleAcceptWithInterview = async () => {
+    if (!selectedApp || !interviewDate || !interviewTime) {
+      toast.error("Please set both a date and time for the interview.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("applications")
-        .update({ status: "accepted" })
-        .eq("id", application.id);
+        .update({ 
+          status: "accepted",
+          interview_date: interviewDate,
+          interview_time: interviewTime,
+        })
+        .eq("id", selectedApp.id);
 
       if (error) throw error;
 
+      // Create notification for applicant
+      const job = jobs.find((j) => j.id === selectedApp.job_id);
+      const formattedDate = new Date(interviewDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      
+      await supabase.from("notifications").insert({
+        user_id: selectedApp.applicant_id,
+        type: "accepted",
+        title: "🎉 Congratulations! You've Been Accepted",
+        message: `Your application for "${job?.title}" has been accepted! Please come in for your in-person interview on ${formattedDate} at ${interviewTime}.`,
+      });
+
       setApplications((prev) =>
         prev.map((app) =>
-          app.id === application.id ? { ...app, status: "accepted" } : app
+          app.id === selectedApp.id ? { ...app, status: "accepted" } : app
         )
       );
-      toast.success(`${application.applicant_name} has been accepted!`);
+      setInterviewDialogOpen(false);
+      toast.success(`${selectedApp.applicant_name} has been accepted and notified of the interview!`);
     } catch (error) {
       console.error("Error updating application:", error);
       toast.error("Failed to update application");
@@ -123,6 +159,15 @@ const Applicants = () => {
         .eq("id", application.id);
 
       if (error) throw error;
+
+      // Create rejection notification
+      const job = jobs.find((j) => j.id === application.job_id);
+      await supabase.from("notifications").insert({
+        user_id: application.applicant_id,
+        type: "rejected",
+        title: "Application Update",
+        message: `Unfortunately, your application for "${job?.title}" was not selected at this time. We encourage you to apply for other positions.`,
+      });
 
       setApplications((prev) =>
         prev.map((app) =>
@@ -310,9 +355,9 @@ const Applicants = () => {
                           {isOwnJob && app.status === "pending" && (
                             <>
                               <button
-                                onClick={() => handleAccept(app)}
+                                onClick={() => openInterviewDialog(app)}
                                 className="p-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors"
-                                title="Accept"
+                                title="Accept & Schedule Interview"
                               >
                                 <CheckCircle className="w-5 h-5" />
                               </button>
