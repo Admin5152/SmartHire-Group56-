@@ -13,15 +13,14 @@ interface AnalyzeRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const OCR_API_KEY = Deno.env.get('OCR_API_KEY');
-    if (!OCR_API_KEY) {
-      throw new Error('OCR_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const { fileBase64, fileType, fileName, techStack }: AnalyzeRequest = await req.json();
@@ -30,61 +29,56 @@ serve(async (req) => {
       throw new Error('Missing file data');
     }
 
-    // Determine the MIME type for the base64 data URL
-    let mimeType = 'application/octet-stream';
+    // Determine MIME type
+    let mimeType = 'application/pdf';
     if (fileType === 'application/pdf') {
       mimeType = 'application/pdf';
-    } else if (fileType === 'application/msword') {
-      mimeType = 'application/msword';
-    } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     } else if (fileType.startsWith('image/')) {
+      mimeType = fileType;
+    } else if (fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       mimeType = fileType;
     }
 
-    // Determine file type for OCR.space API
-    const ocrFileType = fileName.toLowerCase().endsWith('.pdf') ? 'PDF' : 'AUTO';
-    
-    // Call OCR.space API with proper base64 format
-    const formData = new FormData();
-    formData.append('base64Image', `data:${mimeType};base64,${fileBase64}`);
-    formData.append('apikey', OCR_API_KEY);
-    formData.append('language', 'eng');
-    formData.append('isOverlayRequired', 'false');
-    formData.append('filetype', ocrFileType);
-    formData.append('detectOrientation', 'true');
-    formData.append('scale', 'true');
-    formData.append('OCREngine', '2');
-    formData.append('isCreateSearchablePdf', 'false');
-    formData.append('isTable', 'true');
+    console.log('Calling Lovable AI for resume text extraction...');
 
-    console.log('Calling OCR.space API...');
-    
-    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+    // Use Gemini via Lovable AI Gateway to extract text from the resume
+    const extractionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Extract ALL text from this resume document. Return ONLY the raw text content, preserving the structure (headings, bullet points, sections). Do not add any commentary or formatting beyond what is in the document.',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType};base64,${fileBase64}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 4000,
+      }),
     });
 
-    if (!ocrResponse.ok) {
-      const errorText = await ocrResponse.text();
-      console.error('OCR API error:', errorText);
-      throw new Error(`OCR API failed: ${ocrResponse.status}`);
+    if (!extractionResponse.ok) {
+      const errorText = await extractionResponse.text();
+      console.error('AI extraction error:', errorText);
+      throw new Error(`AI text extraction failed: ${extractionResponse.status}`);
     }
 
-    const ocrResult = await ocrResponse.json();
-    console.log('OCR API response received');
-
-    if (ocrResult.IsErroredOnProcessing) {
-      throw new Error(ocrResult.ErrorMessage?.[0] || 'OCR processing failed');
-    }
-
-    // Extract text from all parsed pages
-    let extractedText = '';
-    if (ocrResult.ParsedResults && ocrResult.ParsedResults.length > 0) {
-      extractedText = ocrResult.ParsedResults
-        .map((result: { ParsedText: string }) => result.ParsedText)
-        .join('\n');
-    }
+    const extractionResult = await extractionResponse.json();
+    const extractedText = extractionResult.choices?.[0]?.message?.content || '';
 
     if (!extractedText || extractedText.trim().length === 0) {
       throw new Error('No text could be extracted from the resume');
@@ -96,7 +90,6 @@ serve(async (req) => {
     const resumeLower = extractedText.toLowerCase();
     const matchedSkills: string[] = [];
 
-    // Common tech terms and their variations
     const skillVariations: Record<string, string[]> = {
       'JavaScript': ['javascript', 'js', 'ecmascript'],
       'TypeScript': ['typescript', 'ts'],
@@ -135,19 +128,16 @@ serve(async (req) => {
     techStack.forEach((tech) => {
       const techLower = tech.toLowerCase();
       const variations = skillVariations[tech] || [techLower];
-      
       const found = variations.some(variation => resumeLower.includes(variation));
       if (found) {
         matchedSkills.push(tech);
       }
     });
 
-    // Calculate score based on matched skills
-    const matchPercentage = techStack.length > 0 
-      ? (matchedSkills.length / techStack.length) * 100 
+    const matchPercentage = techStack.length > 0
+      ? (matchedSkills.length / techStack.length) * 100
       : 0;
-    
-    // Add bonus points for experience indicators
+
     let experienceBonus = 0;
     const experienceIndicators = ['years of experience', 'worked at', 'developed', 'built', 'created', 'led', 'managed', 'senior', 'lead'];
     experienceIndicators.forEach(indicator => {
@@ -156,7 +146,6 @@ serve(async (req) => {
       }
     });
 
-    // Calculate final score (capped at 100)
     const score = Math.min(Math.round(matchPercentage + experienceBonus), 100);
 
     console.log('Analysis complete. Score:', score, 'Matched skills:', matchedSkills);
@@ -170,9 +159,7 @@ serve(async (req) => {
         totalSkillsRequired: techStack.length,
         skillsMatched: matchedSkills.length,
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
