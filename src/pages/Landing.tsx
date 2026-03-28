@@ -18,6 +18,7 @@ interface Job {
 const Landing = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [showContact, setShowContact] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
