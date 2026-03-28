@@ -80,12 +80,17 @@ const Landing = () => {
       {/* Hero Section with Video Background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Video Background */}
+        {/* Gradient fallback while video loads */}
+        <div className={`absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50 transition-opacity duration-1000 ${videoLoaded ? 'opacity-0' : 'opacity-100'}`} />
+        
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          preload="auto"
+          onCanPlayThrough={() => setVideoLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         >
           <source src="/videos/hero-background.mp4" type="video/mp4" />
         </video>
